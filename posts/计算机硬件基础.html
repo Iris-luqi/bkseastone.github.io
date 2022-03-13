@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:36Z" />
+  <title>计算机硬件基础</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">计算机硬件基础</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#硬盘基础知识">硬盘基础知识</a></li>
+</ul>
+</nav>
+<h2 id="硬盘基础知识">硬盘基础知识</h2>
+<p>主引导扇区（512字节）包括三部分：</p>
+<ul>
+<li>MBR：主引导记录或主引导程序，用于硬盘启动时将系统控制转给指定的操作系统。</li>
+<li>4个分区表（总64字节）：可为三个主分区表和一个扩展分区表或者四个主分区表。扩展分区表作为特殊的存在，标定了任意数量个逻辑分区表的位置；而主分区表和逻辑分区表标定的是主分区和逻辑分区的位置。</li>
+<li>结束标志（2字节）</li>
+</ul>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

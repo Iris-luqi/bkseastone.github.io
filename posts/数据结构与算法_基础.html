@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:36Z" />
+  <title>数据结构与算法:基础</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">数据结构与算法:基础</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#基础">基础</a></li>
+<li><a href="#排序">排序</a>
+<ul>
+<li><a href="#基本的排序算法">基本的排序算法</a></li>
+<li><a href="#高效排序算法">高效排序算法</a></li>
+<li><a href="#标准模板库中的排序">标准模板库中的排序</a></li>
+</ul></li>
+<li><a href="#树">树</a>
+<ul>
+<li><a href="#二叉查找树">二叉查找树</a></li>
+<li><a href="#二叉堆">二叉堆</a></li>
+<li><a href="#平衡树">平衡树</a></li>
+</ul></li>
+<li><a href="#栈与队列">栈与队列</a>
+<ul>
+<li><a href="#栈">栈</a></li>
+<li><a href="#队列">队列</a></li>
+<li><a href="#优先队列">优先队列</a></li>
+</ul></li>
+<li><a href="#递归">递归</a>
+<ul>
+<li><a href="#分类-1">分类</a></li>
+<li><a href="#总结-1">总结</a></li>
+</ul></li>
+<li><a href="#散列">散列</a></li>
+<li><a href="#数据压缩">数据压缩</a>
+<ul>
+<li><a href="#哈夫曼编码">哈夫曼编码</a></li>
+</ul></li>
+<li><a href="#动态规划"><span>动态规划</span></a>
+<ul>
+<li><a href="#分类-2">分类</a></li>
+<li><a href="#总结-2">总结</a></li>
+</ul></li>
+<li><a href="#经典问题">经典问题</a>
+<ul>
+<li><a href="#topk">topK</a></li>
+</ul></li>
+</ul>
+</nav>
+<p>数据结构的选择：首先得有一堆数据，然后，在确定了这堆数据所需的抽象操作后，便可依据这些抽象操作及运行环境来进一步决定“哪种数据结构的实现形式最有效“。</p>
+<hr />
+<figure>
+<img src="https://img.vim-cn.com/16/ad150cd109abed85839a54152c8bbec2b4839f.png" alt="Data Structure" /><figcaption aria-hidden="true">Data Structure</figcaption>
+</figure>
+<h1 id="基础">基础</h1>
+<p>时间复杂度是用来描述随着问题规模的扩大，程序运行时间会有如何的增长速度。这也是<span class="math inline">\(\mathcal{O}(2n) = \mathcal{O}(n)\)</span>的原因。</p>
+<p>称<span class="math inline">\(\mathcal{O}(1),\mathcal{O}(\log n), \mathcal{O}(n), \mathcal{O}(n^c)\)</span>为多项式级的复杂度，称<span class="math inline">\(\mathcal{O}(c^n), \mathcal{O}(n!)\)</span>为非多项式级的复杂度。</p>
+<ul>
+<li>如果一个问题可以找到一个能在多项式的时间里解决它的算法，那么这个问题就属于P问题。</li>
+<li>不确定能不能在多项式时间内解决，但能在多项式时间内验证的问题属于NP问题。</li>
+<li>如果能找到这样一个变化法则，对任意一个程序A的输入，都能按这个法则变换成程序B的输入，使两程序的输出相同，那么我们说，问题A可约化为问题B。通常，我们所说的“可约化”是指的可“多项式地”约化(Polynomial-time Reducible)。同时满足下面两个条件的问题就是NPC问题：首先，它得是一个NP问题；然后，所有的NP问题都可以约化到它。只要任意一个NPC问题找到了一个多项式的算法，那么所有的NP问题都能用这个算法解决了，NP也就等于P 了。</li>
+<li>满足NPC问题定义的第二条但不一定要满足第一条（就是说，NP-Hard问题要比 NPC问题的范围广）的问题称为NP-Hard问题。</li>
+</ul>
+<h1 id="排序">排序</h1>
+<blockquote>
+<p>为使不同算法之间的比较独立于机器，定义排序算法的两个关键属性——比较次数和移动次数，并用大<span class="math inline">\(\mathcal{O}\)</span> 近似给出，表示这些次数的数量级。</p>
+</blockquote>
+<figure>
+<img src="https://img.vim-cn.com/11/c3fe0dc7d313729051ff3080732acbe114ee9c.jpg" alt="sorts_conclution2" /><figcaption aria-hidden="true">sorts_conclution2</figcaption>
+</figure>
+<h2 id="基本的排序算法">基本的排序算法</h2>
+<h3 id="冒泡排序">冒泡排序</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> bubbleSort<span class="op">(</span>T data<span class="op">[],</span> <span class="dt">int</span> size<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> top<span class="op">=</span><span class="dv">0</span><span class="op">,</span> b<span class="op">;</span> top<span class="op">&lt;</span>size<span class="op">-</span><span class="dv">1</span><span class="op">;</span> <span class="op">++</span>top<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>b<span class="op">=</span>size<span class="op">-</span><span class="dv">1</span><span class="op">;</span> b<span class="op">&gt;</span>top<span class="op">;</span> <span class="op">--</span>b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> <span class="op">(</span>data<span class="op">[</span>b<span class="op">]&lt;</span>data<span class="op">[</span>b<span class="op">-</span><span class="dv">1</span><span class="op">])</span> </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        swap<span class="op">(</span>data<span class="op">[</span>b<span class="op">],</span> data<span class="op">[</span>b<span class="op">-</span><span class="dv">1</span><span class="op">]);</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>该算法无视数据的原始顺序，任何情况下，比较次数和移动次数均为 <span class="math inline">\(\mathcal{O}(n^2)\)</span> 。</p>
+<h3 id="选择排序">选择排序</h3>
+<blockquote>
+<p>可看做冒泡的进阶，通过交换索引的方式，降低了移动次数。</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> selectionSort<span class="op">(</span>T data<span class="op">[],</span> <span class="dt">int</span> size<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i<span class="op">=</span><span class="dv">0</span><span class="op">,</span> j<span class="op">,</span> least<span class="op">;</span> i<span class="op">&lt;</span>size<span class="op">-</span><span class="dv">1</span><span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>least<span class="op">=</span>i<span class="op">,</span> j<span class="op">=</span>i<span class="op">+</span><span class="dv">1</span><span class="op">;</span> j<span class="op">&lt;</span>size<span class="op">;</span> <span class="op">++</span>j<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> <span class="op">(</span>data<span class="op">[</span>j<span class="op">]</span> <span class="op">&lt;</span> data<span class="op">[</span>least<span class="op">])</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        least <span class="op">=</span> j<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>least <span class="op">!=</span> i<span class="op">)</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      swap<span class="op">(</span>data<span class="op">[</span>least<span class="op">],</span> data<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>该算法无视数据的原始顺序，任何情况下，比较次数均为 <span class="math inline">\(\mathcal{O}(n^2)\)</span> ，移动次数均为 <span class="math inline">\(\mathcal{O}(n)\)</span> 。</p>
+<h3 id="插入排序">插入排序</h3>
+<blockquote>
+<p>可看做反向冒泡，相较前两种，更充分地利用了数据的现有情况。</p>
+</blockquote>
+<figure>
+<img src="https://img.vim-cn.com/a6/595468ece94ea3b8b87da2dcbe9f5b1d177b9e.png" alt="insertSort" /><figcaption aria-hidden="true">insertSort</figcaption>
+</figure>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> insertionSort<span class="op">(</span>T data<span class="op">[],</span> <span class="dt">int</span> size<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> r<span class="op">=</span><span class="dv">1</span><span class="op">,</span> l<span class="op">;</span> r<span class="op">&lt;</span>size<span class="op">;</span> <span class="op">++</span>r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    T tmp <span class="op">=</span> data<span class="op">[</span>r<span class="op">];</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span><span class="op">(</span>l<span class="op">=</span>r<span class="op">-</span><span class="dv">1</span><span class="op">;</span> l<span class="op">&gt;=</span><span class="dv">0</span> <span class="op">&amp;&amp;</span> data<span class="op">[</span>l<span class="op">]&gt;</span>tmp<span class="op">;</span> <span class="op">--</span>l<span class="op">)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      data<span class="op">[</span>l<span class="op">+</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> data<span class="op">[</span>l<span class="op">];</span> <span class="co">//腾出位置以便插入</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    data<span class="op">[</span>l<span class="op">+</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> tmp<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>缺点：</p>
+<ol type="1">
+<li>只能识别出已排序的数组部分是否已在合适位置上，而不能识别出未排序的数组部分是否已在合适位置上，如<span class="math inline">\(\{5,2,3,1\}\)</span> 中的 <span class="math inline">\(2, 3\)</span> 已在合适位置上，却仍需多余的移动次数；</li>
+<li>插入操作不是局部操作，可能需要移动大量元素；</li>
+</ol>
+<p>优点：</p>
+<ol type="1">
+<li>只有在需要时才会对数组进行排序；</li>
+</ol>
+<p>最好的情况下，比较次数和移动次数均为 <span class="math inline">\(\mathcal{O} (n)\)</span> ；最坏的情况下，比较次数和移动次数均为 <span class="math inline">\(\mathcal{O} (n^2)\)</span> ；平均情况下，比较次数和移动次数均为 <span class="math inline">\(\mathcal{O} (n^2)\)</span> 。</p>
+<h3 id="总结">总结</h3>
+<blockquote>
+<p>在平均情况下，冒泡排序的比较次数近似为插入排序的两倍，移动次数与插入排序相同；而冒泡排序与选择排序的比较次数是一样的，移动次数比选择排序多 n 次。</p>
+</blockquote>
+<ul>
+<li>当数据由整型组成时，优先<em>考虑<strong>比较</strong>次数，应采用<strong>插入</strong>排序</em>；</li>
+<li>当数据项是大的结构时，优先<em>考虑<strong>移动</strong>次数，宜采用<strong>选择</strong>排序</em>。</li>
+</ul>
+<h3 id="梳排序">梳排序</h3>
+<blockquote>
+<p>当数据具有比较良好的结构时（即一些大的元素在数组底部，小的元素在数组顶部），可对冒泡排序添加一个标志位，当某次冒泡过程中没有发生交换时，就可以终止排序。</p>
+<p>由此有了梳排序：按不同步长进行比较交换实现对数据的预处理，最后进行有标志位的冒泡排序。</p>
+</blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> combSort<span class="op">(</span>T data<span class="op">[],</span> <span class="dt">int</span> size<span class="op">)</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> step <span class="op">=</span> size<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span><span class="op">((</span>step<span class="op">=(</span><span class="dt">int</span><span class="op">)(</span>step<span class="op">/</span><span class="fl">1.3</span><span class="op">))</span> <span class="op">&gt;</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> b<span class="op">=</span>size<span class="op">-</span><span class="dv">1</span><span class="op">;</span> b<span class="op">&gt;=</span>step<span class="op">;</span> <span class="op">--</span>b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span><span class="op">(</span>data<span class="op">[</span>b<span class="op">]</span> <span class="op">&lt;</span> data<span class="op">[</span>b<span class="op">-</span>step<span class="op">])</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        swap<span class="op">(</span>data<span class="op">[</span>b<span class="op">],</span> data<span class="op">[</span>b<span class="op">-</span>step<span class="op">]);</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">bool</span> done <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> top<span class="op">=</span><span class="dv">0</span><span class="op">,</span> b<span class="op">;</span> top<span class="op">&lt;</span>size<span class="op">-</span><span class="dv">1</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>done<span class="op">;</span> <span class="op">++</span>top<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    done <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>b<span class="op">=</span>size<span class="op">-</span><span class="dv">1</span><span class="op">;</span> b<span class="op">&gt;</span>top<span class="op">;</span> <span class="op">--</span>b<span class="op">)</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> <span class="op">(</span>data<span class="op">[</span>b<span class="op">]&lt;</span>data<span class="op">[</span>b<span class="op">-</span><span class="dv">1</span><span class="op">])</span> <span class="op">{</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        swap<span class="op">(</span>data<span class="op">[</span>b<span class="op">],</span> data<span class="op">[</span>b<span class="op">-</span><span class="dv">1</span><span class="op">]);</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        done <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>梳排序中预处理阶段的比较次数约为 <span class="math inline">\(\mathcal{O}(n \lg n)\)</span> ，无视数据顺序。</p>
+<h3 id="决策树">决策树</h3>
+<p>所有的基于比较的排序算法均可写为决策树的形式，故通过对决策树的分析可以得到对基于比较的排序算法更为深入的理解。</p>
+<ol type="1">
+<li><p>i 层完全决策树有 <span class="math inline">\(2^{i-1}\)</span> 个叶子节点， <span class="math inline">\(2^{i-1}-1\)</span> 个非叶子节点，故对于更为一般的 i 层决策树的叶子节点数 m 和非叶子节点数 k 满足： <span class="math inline">\(m\le 2^{i-1}, k\le 2^{i-1}-1\)</span> 。</p></li>
+<li><p>n 个元素的数组有 n! 种排列情况，每种排列情况都可通过一个叶子节点来表示，但排序算法会出现重复和无效的情况，故决策树还会出现一些额外的叶子节点，因此， <span class="math inline">\(n!\le 2^{i-1}\)</span> ，即<strong>完全决策树的叶子节点数是数组排列情况数的上限</strong>。</p></li>
+<li><p>排序算法在最坏情况下的时间复杂度即为相应决策树的深度 i ，又由上一条的结论可得： <span class="math inline">\(i-1\le \lg(n!) \le \mathcal{O}(n\lg n)\)</span> ，故基于比较的排序算法可达到的最好的时间复杂度为 <span class="math inline">\(\mathcal{O}(n \lg n)\)</span> 。</p></li>
+</ol>
+<h2 id="高效排序算法">高效排序算法</h2>
+<h3 id="快速排序">快速排序</h3>
+<blockquote>
+<p>遵循将原始问题变为能更容易、更快速解决的子问题这一原则，在排序的准备过程中实现对数据的排序，这个准备过程即为找到边界值并划分为两个子数组的递归过程。</p>
+<p>在这个准备排序的过程中，排序的思想有些模糊，而这个过程却正是快速排序的核心所在。</p>
+</blockquote>
+<p>采用对边界值选择的不同策略，以及对两个子数组的不同划分方式，可产生快排的各种不同的分支，按对两个子数组的不同划分方式可粗略的分为两类：</p>
+<ol type="1">
+<li>比较复杂度优先的划分方式（以选取数组第一个值作为边界值为例）</li>
+</ol>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> quicksort<span class="op">(</span><span class="dt">int</span> s<span class="op">[],</span> <span class="dt">int</span> l<span class="op">,</span> <span class="dt">int</span> r<span class="op">)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>l <span class="op">&lt;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> i <span class="op">=</span> l<span class="op">,</span> x <span class="op">=</span> s<span class="op">[</span>l<span class="op">],</span> j <span class="op">=</span> r<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span><span class="op">(</span>i <span class="op">&lt;</span> j<span class="op">)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">while</span><span class="op">(</span>i<span class="op">&lt;</span>j <span class="op">&amp;&amp;</span> x<span class="op">&lt;</span>s<span class="op">[</span>j<span class="op">])</span> <span class="co">// find greater</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                <span class="op">--</span>j<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span><span class="op">(</span>i<span class="op">&lt;</span>j<span class="op">)</span>  <span class="co">// 莫忘该条件！</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                s<span class="op">[</span>i<span class="op">++]</span> <span class="op">=</span> s<span class="op">[</span>j<span class="op">];</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">while</span><span class="op">(</span>i<span class="op">&lt;</span>j <span class="op">&amp;&amp;</span> s<span class="op">[</span>i<span class="op">]&lt;</span>x<span class="op">)</span> <span class="co">// find less</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>                <span class="op">++</span>i<span class="op">;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span><span class="op">(</span>i<span class="op">&lt;</span>j<span class="op">)</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                s<span class="op">[</span>j<span class="op">--]</span> <span class="op">=</span> s<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        s<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> x<span class="op">;</span> <span class="co">// have found the bounder postion</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        quicksort<span class="op">(</span>s<span class="op">,</span> l<span class="op">,</span> i<span class="op">-</span><span class="dv">1</span><span class="op">);</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        quicksort<span class="op">(</span>s<span class="op">,</span> i<span class="op">+</span><span class="dv">1</span><span class="op">,</span> r<span class="op">);</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<ol start="2" type="1">
+<li>移动复杂度优先的划分方式（以选取数组中间位置的元素作为边界值为例）</li>
+</ol>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> quickSort<span class="op">(</span>T data<span class="op">[],</span> <span class="dt">int</span> l<span class="op">,</span> <span class="dt">int</span> r<span class="op">)</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> l1 <span class="op">=</span> l<span class="op">,</span> r1 <span class="op">=</span> l<span class="op">,</span> l2 <span class="op">=</span> r<span class="op">,</span> r2 <span class="op">=</span> r<span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// choose the middle element to be the bound</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  swap<span class="op">(</span>data<span class="op">[</span>l<span class="op">],</span> data<span class="op">[(</span>l<span class="op">+</span>r<span class="op">)/</span><span class="dv">2</span><span class="op">]);</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  T bound_data <span class="op">=</span> data<span class="op">[</span>l<span class="op">];</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> bound_idx <span class="op">=</span> l<span class="op">;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">++</span>r1<span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span><span class="op">(</span>r1 <span class="op">&lt;=</span> l2<span class="op">)</span> <span class="op">{</span> <span class="co">// &quot;=&quot; for 2 entries subarray</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span><span class="op">(</span>data<span class="op">[</span>r1<span class="op">]</span> <span class="op">&lt;=</span> bound_data<span class="op">)</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>      <span class="op">++</span>r1<span class="op">;</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span><span class="op">(</span>bound_data <span class="op">&lt;</span> data<span class="op">[</span>l2<span class="op">])</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>      <span class="op">--</span>l2<span class="op">;</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>r1 <span class="op">&lt;</span> l2<span class="op">)</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>      swap<span class="op">(</span>data<span class="op">[</span>r1<span class="op">],</span> data<span class="op">[</span>l2<span class="op">]);</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="op">--</span>r1<span class="op">,</span> <span class="op">++</span>l2<span class="op">;</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  swap<span class="op">(</span>data<span class="op">[</span>bound_idx<span class="op">],</span> data<span class="op">[</span>r1<span class="op">]);</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="op">--</span>r1<span class="op">;</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span><span class="op">(</span>l1 <span class="op">&lt;</span> r1<span class="op">)</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    quickSort<span class="op">(</span>data<span class="op">,</span> l1<span class="op">,</span> r1<span class="op">);</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span><span class="op">(</span>l2 <span class="op">&lt;</span> r2<span class="op">)</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    quickSort<span class="op">(</span>data<span class="op">,</span> l2<span class="op">,</span> r2<span class="op">);</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> quickSort<span class="op">(</span>T data<span class="op">[],</span> <span class="dt">int</span> size<span class="op">)</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> i<span class="op">,</span> max<span class="op">;</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span><span class="op">(</span>i<span class="op">=</span><span class="dv">1</span><span class="op">,</span> max<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span>size<span class="op">-</span><span class="dv">1</span><span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>data<span class="op">[</span>i<span class="op">]</span> <span class="op">&gt;</span> data<span class="op">[</span>max<span class="op">])</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>      max <span class="op">=</span> i<span class="op">;</span></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>  <span class="co">// avoid r1 of the left subarray out of range</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>  swap<span class="op">(</span>data<span class="op">[</span>size<span class="op">-</span><span class="dv">1</span><span class="op">],</span> data<span class="op">[</span>max<span class="op">]);</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>  quickSort<span class="op">(</span>data<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> size<span class="op">-</span><span class="dv">2</span><span class="op">);</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>若将原始数组看做一棵树的根节点，那么每次划分便会产生更深一层的叶子节点。但无论边界值在哪划分结果如何，对于同一层的所有叶子节点所需要的比较次数之和均为 <span class="math inline">\(\mathcal{O}(n)\)</span> ，故该树产生的层数越深，比较复杂度越高，最好的情况为 <span class="math inline">\(\mathcal{O}(\lg n)\)</span> ，最差的情况为 <span class="math inline">\(\mathcal{O}(n)\)</span> ，平均情况为 <span class="math inline">\(\mathcal{O}(\lg n)\)</span> 。</p>
+<p>另外，快速排序算法并不适合小型数组，对于小于30个数据项的小数组来说，插入排序比快速排序更有效，故可以子数组长度为条件对算法做融合。</p>
+<h3 id="归并排序">归并排序</h3>
+<blockquote>
+<p>快速排序很难控制划分过程，难以保证划分产生的子数组有大致相同的长度；归并排序不去控制划分过程，而通过添加一新的条件，去着重于合并两个已排好序的数组。</p>
+<p>合并过程中我们可以保证如果两个当前元素相等时，我们把处在前面的序列的元素保存在结 果序列的前面，这样就保证了稳定性。</p>
+</blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> merge<span class="op">(</span><span class="dt">int</span> <span class="op">*</span>a<span class="op">,</span> <span class="dt">int</span> begin<span class="op">,</span> <span class="dt">int</span> end<span class="op">,</span> <span class="dt">int</span> <span class="op">*</span>tmp<span class="op">)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> mid <span class="op">=</span> <span class="op">(</span>begin<span class="op">+</span>end<span class="op">)/</span><span class="dv">2</span><span class="op">;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> l1<span class="op">=</span>begin<span class="op">,</span> l2<span class="op">=</span>mid<span class="op">,</span> i<span class="op">=</span>begin<span class="op">;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span><span class="op">(</span>l1<span class="op">&lt;</span>mid <span class="op">&amp;&amp;</span> l2<span class="op">&lt;</span>end<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span><span class="op">(</span>l1<span class="op">&lt;</span>mid <span class="op">&amp;&amp;</span> a<span class="op">[</span>l1<span class="op">]&lt;</span>a<span class="op">[</span>l2<span class="op">])</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      tmp<span class="op">[</span>i<span class="op">++]</span> <span class="op">=</span> a<span class="op">[</span>l1<span class="op">++];</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span><span class="op">(</span>l2<span class="op">&lt;</span>end <span class="op">&amp;&amp;</span> a<span class="op">[</span>l2<span class="op">]&lt;</span>a<span class="op">[</span>l1<span class="op">])</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>      tmp<span class="op">[</span>i<span class="op">++]</span> <span class="op">=</span> a<span class="op">[</span>l2<span class="op">++];</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span><span class="op">(</span>l1<span class="op">&lt;</span>mid<span class="op">)</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    tmp<span class="op">[</span>i<span class="op">++]</span> <span class="op">=</span> a<span class="op">[</span>l1<span class="op">++];</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span><span class="op">(</span>l2<span class="op">&lt;</span>end<span class="op">)</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    tmp<span class="op">[</span>i<span class="op">++]</span> <span class="op">=</span> a<span class="op">[</span>l2<span class="op">++];</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span><span class="op">(</span>i<span class="op">=</span>begin<span class="op">;</span> i<span class="op">&lt;</span>end<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    a<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> tmp<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> mergeSort<span class="op">(</span><span class="dt">int</span> <span class="op">*</span>a<span class="op">,</span> <span class="dt">int</span> begin<span class="op">,</span> <span class="dt">int</span> end<span class="op">,</span> <span class="dt">int</span> <span class="op">*</span>tmp<span class="op">)</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span><span class="op">(</span>end <span class="op">-</span> begin <span class="op">&gt;</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> mid <span class="op">=</span> <span class="op">(</span>begin<span class="op">+</span>end<span class="op">)/</span><span class="dv">2</span><span class="op">;</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    mergeSort<span class="op">(</span>a<span class="op">,</span> begin<span class="op">,</span> mid<span class="op">,</span> tmp<span class="op">);</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    mergeSort<span class="op">(</span>a<span class="op">,</span> mid<span class="op">,</span> end<span class="op">,</span> tmp<span class="op">);</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    merge<span class="op">(</span>a<span class="op">,</span> begin<span class="op">,</span> end<span class="op">,</span> tmp<span class="op">);</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>任何情况下，比较次数和移动次数均为 <span class="math inline">\(\mathcal{O}(n \lg n)\)</span> 。</p>
+<figure>
+<img src="https://img.vim-cn.com/fa/c0d28215f95857a84b3be6c08e9666459711a3.jpg" alt="mergeSort" /><figcaption aria-hidden="true">mergeSort</figcaption>
+</figure>
+<p>用迭代来取代递归或者对短长度的子数组使用插入排序，将提高归并的效率，以迭代为例，示例代码如下：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"></code></pre></div>
+<p>归并需要额外的 <span class="math inline">\(\mathcal{O}(n)\)</span> 的存储空间，对于大数据来说这是不现实的，一个解决方法是使用链表，示例代码如下：</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"></code></pre></div>
+<h3 id="堆排序">堆排序</h3>
+<h3 id="计数排序">计数排序</h3>
+<h3 id="基数排序">基数排序</h3>
+<h3 id="希尔排序">希尔排序</h3>
+<h2 id="标准模板库中的排序">标准模板库中的排序</h2>
+<h1 id="树">树</h1>
+<p>依据结构，可将二叉树分为满二叉树、完全二叉树、平衡二叉树和其它。在满二叉树的基础上，在最底层从右往左删除若干节点得到的便是完全二叉树。而平衡二叉树是左右两个子树的高度值相差不超过1的树。</p>
+<p>树的度为2的节点个数总比叶子节点个数少1个。若层数从1开始数起，满二叉树第k层的节点个数为<span class="math inline">\(2^{k-1}\)</span>，总节点个数为<span class="math inline">\(2^k - 1\)</span>。</p>
+<h2 id="二叉查找树">二叉查找树</h2>
+<blockquote>
+<ul>
+<li>对于用数组来存储数据，用二分法来做查找的情况，会面临插入操作十分复杂的问题</li>
+<li>对于用链表来存储数据，用断裂重连的方法来做插入的情况，会面临查找操作十分复杂的问题</li>
+</ul>
+<p>而二叉查找树这种数据结构融合了二者的优点，解决了二者的缺点，十分适用于数据的查找。</p>
+</blockquote>
+<h3 id="基础-1">基础</h3>
+<h4 id="实现方式">实现方式</h4>
+<ol type="1">
+<li>数组结构：维护三个数组，一个数组为数据项，另两个数组为当前数据项左右子节点的偏移量（以当前数据项在数组中的位置为基址）；因为做插入操作十分不便，一般不用（堆会用）。</li>
+<li>链结构：维护一个节点结构，内含一个数据项和两个指向节点结构的指针。</li>
+</ol>
+<h4 id="分类">分类</h4>
+<ol type="1">
+<li>满二叉树 = 完全二叉树 &lt; 决策树 &lt; 二叉树
+<ul>
+<li>满足第 i 层有 <span class="math inline">\(2^{i-1}\)</span> 个节点的树称为完全二叉树</li>
+<li>所有的非终端节点均有两个非空子节点的树称为决策树，这种树满足：叶节点的数目 m 大于非终端节点的数目 k，并且 m = k + 1</li>
+</ul></li>
+<li>平衡二叉树：</li>
+<li>堆：</li>
+</ol>
+<h4 id="名词">名词</h4>
+<ol type="1">
+<li>树的高度：最深节点的层次，如空树为0，一个节点构成的树为1</li>
+<li>路径的长度：每个节点都可以从根节点经过唯一的一个弧序列到达，此弧序列被称为路径，路径中弧的数量称为路径的长度</li>
+<li>树中节点的命名：根，左子节点，右子节点，左子树，右子树，叶子节点，父节点</li>
+<li></li>
+</ol>
+<h3 id="插入删除查找遍历">插入、删除、查找、遍历</h3>
+<blockquote>
+<p>查找算法的复杂度通过查找过程中的比较次数来度量。</p>
+</blockquote>
+<h5 id="插入">插入</h5>
+<p>构建一棵二叉查找树相当于向一棵空树中插入 n 个节点，其最坏情况下的复杂度为 <span class="math inline">\(\mathcal{O}(n^2)\)</span> ，最好情况与平均情况均为 <span class="math inline">\(\mathcal{O}(n \lg n)\)</span> 。</p>
+<h5 id="遍历">遍历</h5>
+<p>树的遍历可分为广度优先遍历（体现树的结构）与深度优先遍历（体现排序）。</p>
+<p>深度优先遍历是尽可能地向同一个方向进行（左或右），</p>
+<h3 id="树与红黑树">2-3树与红黑树</h3>
+<p>拔高的理解方向 https://www.cnblogs.com/yangecnu/p/Introduce-Red-Black-Tree.html 。</p>
+<h2 id="二叉堆">二叉堆</h2>
+<p>若用链结构，堆的插入操作将十分复杂，又因堆的性质（完全平衡，且最后一层的叶子都处于最左侧的位置(完全二叉树)，即堆中每个元素的位置可用一固定的关系式索引），可用数组更为方便的实现。具体为：设数组下标为0的位置为完全二叉树的根节点，记为节点0，因为树的度为2的节点个数总比叶子节点个数少一个，所以节点k的左右子节点分别为节点2k+1和2k+2，父节点为节点<span class="math inline">\(floor(\frac{k-1}{2})\)</span>。</p>
+<p><a href="https://chihminh.github.io/2016/08/08/heap-sort/">重建堆的时间复杂度</a>为<span class="math inline">\(\mathcal{O}(n)\)</span>，将堆做排序的时间复杂度为<span class="math inline">\(\mathcal{O}(n\log n)\)</span>，故用堆排序对无序数组做排序的时间复杂度为<span class="math inline">\(\mathcal{O}(n\log n)\)</span>。</p>
+<p>用数组实现最小堆如下：</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">,</span> <span class="dt">int</span> capacity<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> HeapTree <span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a> <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  HeapTree<span class="op">()</span> <span class="op">{</span> tree<span class="op">.</span>reserve<span class="op">(</span>capacity<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  HeapTree<span class="op">(</span><span class="at">const</span> T<span class="op">&amp;</span> e<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    tree<span class="op">.</span>reserve<span class="op">(</span>capacity<span class="op">);</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    tree<span class="op">.</span>push_back<span class="op">(</span>e<span class="op">);</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">~</span>HeapTree<span class="op">()</span> <span class="op">{</span> tree<span class="op">.</span>clear<span class="op">();</span> <span class="op">}</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">bool</span> isEmpty<span class="op">(</span><span class="dt">void</span><span class="op">)</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> tree<span class="op">.</span>empty<span class="op">();</span> <span class="op">}</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> insert<span class="op">(</span><span class="at">const</span> T<span class="op">&amp;</span> e<span class="op">);</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  T popRoot<span class="op">(</span><span class="dt">void</span><span class="op">);</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a> <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> tree<span class="op">;</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> moveDown<span class="op">(</span><span class="dt">int</span> begin<span class="op">,</span> <span class="dt">int</span> end<span class="op">);</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">,</span> <span class="dt">int</span> capacity<span class="op">&gt;</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> HeapTree<span class="op">&lt;</span>T<span class="op">,</span> capacity<span class="op">&gt;::</span>insert<span class="op">(</span><span class="at">const</span> T<span class="op">&amp;</span> e<span class="op">)</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>  tree<span class="op">.</span>push_back<span class="op">(</span>e<span class="op">);</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> i<span class="op">,</span> j<span class="op">;</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  i <span class="op">=</span> j <span class="op">=</span> tree<span class="op">.</span>size<span class="op">()</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span>  <span class="co">// real index</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span><span class="op">(</span>i <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">--</span>i <span class="op">/=</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>tree<span class="op">[</span>i<span class="op">]</span> <span class="op">&gt;</span> tree<span class="op">[</span>j<span class="op">])</span> <span class="op">{</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>      swap<span class="op">(</span>tree<span class="op">[</span>i<span class="op">],</span> tree<span class="op">[</span>j<span class="op">]);</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>      j <span class="op">=</span> i<span class="op">;</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">,</span> <span class="dt">int</span> capacity<span class="op">&gt;</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>T HeapTree<span class="op">&lt;</span>T<span class="op">,</span> capacity<span class="op">&gt;::</span>popRoot<span class="op">(</span><span class="dt">void</span><span class="op">)</span></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>  T el <span class="op">=</span> tree<span class="op">.</span>front<span class="op">();</span></span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>  swap<span class="op">(</span>tree<span class="op">.</span>front<span class="op">(),</span> tree<span class="op">.</span>back<span class="op">());</span></span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>  tree<span class="op">.</span>pop_back<span class="op">();</span></span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>  moveDown<span class="op">(</span><span class="dv">0</span><span class="op">,</span> tree<span class="op">.</span>size<span class="op">());</span></span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> el<span class="op">;</span></span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">,</span> <span class="dt">int</span> capacity<span class="op">&gt;</span></span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> HeapTree<span class="op">&lt;</span>T<span class="op">,</span> capacity<span class="op">&gt;::</span>moveDown<span class="op">(</span><span class="dt">int</span> begin<span class="op">,</span> <span class="dt">int</span> end<span class="op">)</span></span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> i<span class="op">,</span> j <span class="op">=</span> begin<span class="op">;</span></span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>  i <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>j <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span><span class="op">(</span>i <span class="op">&lt;=</span> end<span class="op">-</span><span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="co">// 有左子节点</span></span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>i <span class="op">&lt;=</span> end<span class="op">-</span><span class="dv">2</span> <span class="op">&amp;&amp;</span> tree<span class="op">[</span>i<span class="op">]</span> <span class="op">&gt;</span> tree<span class="op">[</span>i<span class="op">+</span><span class="dv">1</span><span class="op">])</span> <span class="co">//有右兄弟节点&amp;&amp;右兄弟节点更小</span></span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>      i <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>j <span class="op">+</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>tree<span class="op">[</span>j<span class="op">]</span> <span class="op">&gt;</span> tree<span class="op">[</span>i<span class="op">])</span> <span class="op">{</span></span>
+<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a>      swap<span class="op">(</span>tree<span class="op">[</span>j<span class="op">],</span> tree<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a>      j <span class="op">=</span> i<span class="op">;</span></span>
+<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>      i <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>j <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h2 id="平衡树">平衡树</h2>
+<p>完全平衡树（AVL树）：所有节点的左子树与右子树的高度差均不能超过1；将左子树的高度减去右子树的高度称为该节点的平衡因子（BF）。</p>
+<figure>
+<img src="https://img.vim-cn.com/6f/773b5ac43ff810d1d8439ffa673cfa13ae7d70.jpg" alt="balanceTree" /><figcaption aria-hidden="true">balanceTree</figcaption>
+</figure>
+<h1 id="栈与队列">栈与队列</h1>
+<h2 id="栈">栈</h2>
+<p>记忆序列，在需要遍历操作时可利用记忆特性实现一些特殊需求，如树的遍历、链表反转、符号匹配、大数相加等。</p>
+<h2 id="队列">队列</h2>
+<p>等待序列，可模拟实现排队论中的模型。</p>
+<h2 id="优先队列">优先队列</h2>
+<p>四种实现方式</p>
+<ol type="1">
+<li>两种链表的变种
+<ul>
+<li>无序链表：入队 O(1)，出队 O(n)</li>
+<li>有序链表：入队 O(n)，出队 O(1)</li>
+</ul></li>
+<li>一个有序链表+一个无序链表：入队 O(sqrt(n))，出队 O(1)</li>
+<li>一个指针数组+一个无序链表：入队 O(sqrt(n))，出队 O(1)</li>
+<li>排序树或堆：入队 O(lg(n))，出队 O(1)</li>
+</ol>
+<p>因为大多用堆实现，故可以直接看为堆，另起名为优先队列的原因是为方便思考（在使用时表现为带优先级的队列）。</p>
+<p>demo 如下：</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> test_proprityQueue<span class="op">(</span><span class="dt">void</span><span class="op">)</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  HeapTree<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dv">10</span><span class="op">&gt;</span> pq<span class="op">;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> a<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">3</span><span class="op">};</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span><span class="dv">8</span><span class="op">;</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    pq<span class="op">.</span>insert<span class="op">(</span>a<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span><span class="op">(!</span>pq<span class="op">.</span>isEmpty<span class="op">())</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    cout <span class="op">&lt;&lt;</span> pq<span class="op">.</span>popRoot<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="st">&quot;, &quot;</span><span class="op">;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h1 id="递归">递归</h1>
+<p>系统在实现时利用的是具有记忆特性的栈。</p>
+<ul>
+<li><p>定义新对象或新概念的基本规则之一是：定义中只能包含已经定义过的或含义明显的术语，否则需要给定义加上形式约束，以保证其满足存在性和唯一性。这种打擦边球的定义称为递归定义，主要用于定义无限集合。</p></li>
+<li><p>递归定义由两部分组成：锚(anchor)和产生新对象的构造规则。</p></li>
+<li><p>递归常用于两个场景：生成和查找。</p></li>
+<li><p>使用递归的好处是逻辑上的简单性和可读性，其代价是降低了运行速度（额外的函数调用和不必要的迂回计算）</p></li>
+</ul>
+<h2 id="分类-1">分类</h2>
+<blockquote>
+<p>递归调用不是表面上的函数调用自身，而是一个函数的实例调用另一个函数的实例（这些调用在底层表示为不同的活动记录，并由系统区分，详见<a href="">blank</a>）。</p>
+</blockquote>
+<p>按应用的任务一般分为以下 5 类。</p>
+<h3 id="尾递归">尾递归</h3>
+<p><strong>（单道）正向循环</strong>。</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun1<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>i <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        cout <span class="op">&lt;&lt;</span> i <span class="op">&lt;&lt;</span> <span class="st">&quot;, &quot;</span><span class="op">;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        fun1<span class="op">(</span>i<span class="op">-</span><span class="dv">1</span><span class="op">);</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="非尾递归">非尾递归</h3>
+<p><strong>（叉道）反向循环</strong>。</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun2<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>i <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        fun2<span class="op">(</span>i<span class="op">-</span><span class="dv">1</span><span class="op">);</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>        cout <span class="op">&lt;&lt;</span> i <span class="op">&lt;&lt;</span> <span class="st">&quot;, &quot;</span><span class="op">;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>将非尾递归形式转化为迭代形式都需要显示地使用栈，如二叉树的深度优先遍历。</p>
+<p>尾递归是迭代生长消亡，非尾递归是栈形式的生长消亡。单条的非尾递归是条型的栈，多条的非尾递归是树型的栈（有几句递归调用便是几叉树，与调用是否在同一语句无关）。</p>
+<p>多条非尾递归时间复杂度为<span class="math inline">\(\mathcal{O}(k^h)\)</span> ，其中h为树的深度，k为树的叉数。</p>
+<p>计算二叉树叶子节点数的递归程序完美地诠释了递归的针对无限集合的生成和查询功能，如下：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> num <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> calLeafNum<span class="op">(</span>Node <span class="op">*</span>p<span class="op">)</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span><span class="op">(</span>p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>p<span class="op">-&gt;</span>left <span class="op">||</span> p<span class="op">-&gt;</span>right<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>      calLeafNum<span class="op">(</span>p<span class="op">-&gt;</span>left<span class="op">);</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>      calLeafNum<span class="op">(</span>p<span class="op">-&gt;</span>right<span class="op">);</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> </span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>      <span class="op">++</span>num<span class="op">;</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="回溯">回溯</h3>
+<p>尝试一条路径不成功后，返回最近的十字路口尝试另一条路径，这种方法称为回溯。使用回溯法可以回到出发位置，这为成功解决问题提供了其他可能性。使用回溯须具备以下两个条件：</p>
+<ol type="1">
+<li>在迭代中使用非尾递归（利用栈具有记忆的特性，以此达到尝试未尝试过的路径的目的）。</li>
+<li>在迭代尾部实现对递归记录的擦除以便回溯。</li>
+</ol>
+<p>求解八皇后问题的实例代码片段如下：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ChessBoard<span class="op">::</span>putQueen<span class="op">(</span><span class="dt">int</span> row<span class="op">)</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> col<span class="op">=</span><span class="dv">0</span><span class="op">;</span> col<span class="op">&lt;</span>square<span class="op">;</span> <span class="op">++</span>col<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>column<span class="op">[</span>col<span class="op">]</span> <span class="op">==</span> avaliable <span class="op">&amp;&amp;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        left_diagonal<span class="op">[</span>row<span class="op">+</span>col<span class="op">]</span> <span class="op">==</span> avaliable <span class="op">&amp;&amp;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        right_diagonal<span class="op">[</span>row<span class="op">-</span>col<span class="op">+</span>norm<span class="op">]</span> <span class="op">==</span> avaliable<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>      position_in_row<span class="op">[</span>row<span class="op">]</span> <span class="op">=</span> col<span class="op">;</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>      column<span class="op">[</span>col<span class="op">]</span> <span class="op">=</span> <span class="op">!</span>avaliable<span class="op">;</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>      left_diagonal<span class="op">[</span>row<span class="op">+</span>col<span class="op">]</span> <span class="op">=</span> <span class="op">!</span>avaliable<span class="op">;</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>      right_diagonal<span class="op">[</span>row<span class="op">-</span>col<span class="op">+</span>norm<span class="op">]</span> <span class="op">=</span> <span class="op">!</span>avaliable<span class="op">;</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span><span class="op">(</span>row <span class="op">&lt;</span> square<span class="op">-</span><span class="dv">1</span><span class="op">)</span> </span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>        putQueen<span class="op">(</span>row<span class="op">+</span><span class="dv">1</span><span class="op">);</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>      <span class="cf">else</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>        printBoard<span class="op">();</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>      <span class="co">// below opts for backtracking</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>      position_in_row<span class="op">[</span>row<span class="op">]</span> <span class="op">=</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>      column<span class="op">[</span>col<span class="op">]</span> <span class="op">=</span> avaliable<span class="op">;</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>      left_diagonal<span class="op">[</span>row<span class="op">+</span>col<span class="op">]</span> <span class="op">=</span> avaliable<span class="op">;</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>      right_diagonal<span class="op">[</span>row<span class="op">-</span>col<span class="op">+</span>norm<span class="op">]</span> <span class="op">=</span> avaliable<span class="op">;</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="间接递归和嵌套递归">间接递归和嵌套递归</h3>
+<p>少见</p>
+<h3 id="不合理递归">不合理递归</h3>
+<p>有些任务不适合用递归来解决，如求解斐波那契数列，这种任务若用递归来解决则会出现多次重复同样计算的情况，计算复杂度会呈指数级增长。</p>
+<p>递归相当于构建了一棵树，对于不合理递归是指该任务不适合构建成一棵树来解决。</p>
+<p>不合理递归常见的代码形式为在同一行代码里出现两次或两次以上的递归调用，如 <code>return fun(i-1) + fun (i-2)</code> 。</p>
+<h2 id="总结-1">总结</h2>
+<ol type="1">
+<li>有两种场合使用非递归的实现方式更为可取：实时系统中，和多次执行的程序中。</li>
+<li>如果在非递归的实现方式中无法避免使用栈，则推荐使用递归方式，因为两种方式的运行时间差距一般不会相差10倍；如果在计算时，程序中的某一部分毫无必要地重复，就应避免使用递归。</li>
+</ol>
+<h1 id="散列">散列</h1>
+<h1 id="数据压缩">数据压缩</h1>
+<h2 id="哈夫曼编码">哈夫曼编码</h2>
+<p>哈夫曼编码即为最优前缀编码，通过最优二叉树实现。</p>
+<p>它的另一个性质是具有编解码时的无歧义（这也是前缀编码希望具有的性质，否则在编解码时会十分冗杂）。这是因为它采用二叉树的结构进行编码，若要编解码出现歧义，那么某个字符的编码需成为另一个歧义字符的编码的前缀，对应在二叉树上便是目标对象不在叶子节点上，而是在歧义目标对象的编码路径上。哈夫曼编码通过强制规定目标对象必须均在叶子节点上的方法，实现了编解码时的无歧义性。</p>
+<p>用优先队列实现如下：</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> create_huffman_code<span class="op">(</span><span class="dt">void</span><span class="op">)</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">float</span> probs<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span><span class="fl">0.09</span><span class="op">,</span> <span class="fl">0.11</span><span class="op">,</span> <span class="fl">0.19</span><span class="op">,</span> <span class="fl">0.22</span><span class="op">,</span> <span class="fl">0.39</span><span class="op">};</span> <span class="co">// E, D, C, B, A</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> len_probs <span class="op">=</span> <span class="kw">sizeof</span><span class="op">(</span>probs<span class="op">)</span> <span class="op">/</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">float</span><span class="op">);</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> <span class="op">*</span>codes <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span><span class="op">[</span><span class="dv">2</span><span class="op">*</span>len_probs <span class="op">-</span> <span class="dv">1</span><span class="op">];</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  HeapTree<span class="op">&lt;</span><span class="dt">float</span><span class="op">,</span> len_probs<span class="op">&gt;</span> pq<span class="op">;</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span>len_probs<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    pq<span class="op">.</span>insert<span class="op">(</span>probs<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    records<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> probs<span class="op">[</span>i<span class="op">];</span> <span class="co">// records = {.09, .12, ...}</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span><span class="dv">2</span><span class="op">*</span>len_probs<span class="op">-</span><span class="dv">1</span><span class="op">;</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    codes<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> j<span class="op">=</span>len_probs<span class="op">;</span> j<span class="op">&lt;</span><span class="dv">2</span><span class="op">*</span>len_probs<span class="op">-</span><span class="dv">1</span><span class="op">;</span> <span class="op">++</span>j<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> el_left <span class="op">=</span> pq<span class="op">.</span>popRoot<span class="op">();</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> el_right <span class="op">=</span> pq<span class="op">.</span>popRoot<span class="op">();</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> new_el <span class="op">=</span> el_left <span class="op">+</span> el_right<span class="op">;</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>    pq<span class="op">.</span>insert<span class="op">(</span>new_el<span class="op">);</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    records<span class="op">[</span>j<span class="op">]</span> <span class="op">=</span> new_el<span class="op">;</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> flag<span class="op">=</span><span class="dv">0</span><span class="op">,</span> i<span class="op">=</span>j<span class="op">-</span>len_probs<span class="op">;</span> i<span class="op">&lt;</span>j<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span><span class="op">(</span>codes<span class="op">[</span>i<span class="op">]</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="co">// avoid assignment el that not in HeapTree/PrioratyQueue</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span><span class="op">(</span>el_left <span class="op">==</span> records<span class="op">[</span>i<span class="op">])</span> <span class="op">{</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>          codes<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> j<span class="op">;</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>          <span class="cf">if</span><span class="op">(++</span>flag <span class="op">==</span> <span class="dv">2</span><span class="op">)</span> <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span><span class="op">(</span>el_right <span class="op">==</span> records<span class="op">[</span>i<span class="op">])</span> <span class="op">{</span> <span class="co">// avoid el_right same to el_left</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>          codes<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> <span class="op">-</span>j<span class="op">;</span></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>          <span class="cf">if</span><span class="op">(++</span>flag <span class="op">==</span> <span class="dv">2</span><span class="op">)</span> <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> <span class="st">&quot;codes = [&quot;</span><span class="op">;</span></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span><span class="dv">2</span><span class="op">*</span>len_probs<span class="op">-</span><span class="dv">1</span><span class="op">;</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>    cout <span class="op">&lt;&lt;</span> codes<span class="op">[</span>i<span class="op">]</span> <span class="op">&lt;&lt;</span> <span class="st">&quot;, &quot;</span><span class="op">;</span></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> <span class="st">&quot;]&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>  <span class="kw">delete</span><span class="op">[]</span> records<span class="op">;</span></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>  <span class="kw">delete</span><span class="op">[]</span> codes<span class="op">;</span></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h1 id="动态规划"><a href="https://blog.csdn.net/zzc15806/article/details/84779131">动态规划</a></h1>
+<p>若待求结果依赖子问题（即各子问题之间不独立），贪心法难以求解全局最优；同理，分治法将做许多冗余工作，重复地解决公共子问题。动态规划方法要寻找符合“最优子结构“的状态和状态转移方程的定义<strong>，</strong>在找到之后，这个问题就可以以“记忆化地求解递推式”的方法来解决。</p>
+<p>最优子结构：</p>
+<ul>
+<li>如果一个问题的解结构包含其子问题的最优解，就称此问题具有最优子结构性质。</li>
+<li>在状态转移方程中，若等式右边下标不会用到等式左边下标的值，则称这种状态无后效性，也将与该状态相关的问题称为最优子结构。</li>
+</ul>
+<p>在定义状态时，一定要定义成与数据索引相关的子问题（而非与数据量相关），这样就能在原始数据上设置固定围栏，执行有范围的拉网搜索，进而得到围栏内的最优解；然后借由最优子结构，通过记忆化地求解递推式，便可得到全局最优。</p>
+<h2 id="分类-2">分类</h2>
+<h3 id="线性模型">线性模型</h3>
+<ul>
+<li>状态的表示呈线性排布，即状态的自变量为数组索引，通常用<code>F[k]</code>来表示区间[1,k]上的最优解，然后通过状态转移计算出[1,k+1]上的最优解，逐步扩大线性范围，最终求得[1,N]上的最优解。如最长单调子序列、<a href="https://blog.csdn.net/nixiangxiren/article/details/80463016">小朋友过桥</a>。</li>
+<li>当然还可扩展到多维，用<code>F[m][n]</code>来表示区间[1,m]和[1,n]上的最优解，如最长公共子序列。</li>
+<li>上述索引均为从1开始，一是因为状态的边界条件，二是为了保证状态和数据索引一致。</li>
+<li>通常用自底向上的迭代方法求解。</li>
+</ul>
+<h3 id="区间模型">区间模型</h3>
+<ul>
+<li>状态的表示呈区间排布，即状态的自变量为数组的两个索引（即区间），通常用<code>d[i][j]</code>来表示区间 [i, j] 上的最优解，然后通过状态转移计算出 [i+1, j] 或者 [i, j-1] 上的最优解，逐步缩小区间的范围至终止状态，然后反向推理（递归自动实现），最终求得 [0, N-1] 的最优解。如最小插入回文串。</li>
+<li>没有边界条件。</li>
+<li>通常用自顶向下的递归方法求解，并借用备忘录免去冗余计算。</li>
+</ul>
+<h3 id="背包模型">背包模型</h3>
+<ul>
+<li>带约束条件的线性模型，通常用<code>select[i][j]</code>来表示做01规划时做到第i件物品且消耗容量j时获得的最大收益。如<a href="https://blog.csdn.net/crayondeng/article/details/15784093">01背包问题</a>。</li>
+<li>与线性模型的边界条件一致。</li>
+<li>通常用自底向上的迭代方法求解。</li>
+</ul>
+<p>当不将物品放入背包也会出现容量损失时，问题便不再是离散的01规划问题，即不再是背包模型，这种问题一般需用回溯进行求解。如小偷偷商店问题。</p>
+<h2 id="总结-2">总结</h2>
+<p>只须推得递推式，并确定停止条件即可，无须考虑繁琐的内部细节，计算机会在你定的条框下自动解决。</p>
+<h1 id="经典问题">经典问题</h1>
+<h2 id="topk">topK</h2>
+<h3 id="分治法">分治法</h3>
+<p>借用快排思想，时间复杂度为 <span class="math inline">\(\mathcal{O}(n)\)</span> ，对于没有运行内存限制的情况是速度最快的解决方案。</p>
+<h3 id="堆">堆</h3>
+<p>将前 K 个数构建最小堆，并在内存中维护该最小堆（对于后 n-K 个数，若大于最小堆的堆顶则删掉堆顶并将该数插入堆中，否则忽略，如此遍历后得到的最小堆即为前 K 大的数），对于有运行内存限制的情况为最佳解决方案，时间复杂度为 <span class="math inline">\(\mathcal{O}(n \lg k)\)</span> 。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

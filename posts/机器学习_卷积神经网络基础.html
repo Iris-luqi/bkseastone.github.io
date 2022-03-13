@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:35Z" />
+  <title>机器学习:卷积神经网络基础</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">机器学习:卷积神经网络基础</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#前言">前言</a></li>
+<li><a href="#基础概念">基础概念</a></li>
+<li><a href="#卷积核类型"><span>卷积核类型</span></a></li>
+<li><a href="#对深度模型的一些优化">对深度模型的一些优化</a></li>
+<li><a href="#实现方面的细节">实现方面的细节</a></li>
+<li><a href="#后记">后记</a></li>
+</ul>
+</nav>
+<h2 id="前言">前言</h2>
+<blockquote>
+<p>卷积神经网络适用场景：输入信号在空间上和时间上存在一定关联性的场景。</p>
+</blockquote>
+<p>封面图左侧为基础网络结构的调整，右侧为基础网络深度的增加。</p>
+<h2 id="基础概念">基础概念</h2>
+<h3 id="卷积convolution"><a href="https://blog.csdn.net/T7SFOKzorD1JAYMSFk4/article/details/80269127">卷积</a>(convolution)</h3>
+<blockquote>
+<p>一次卷积的计算量（FLOPs）为<span class="math inline">\(O(k*k*C_{in}*M*N*C_{out})\)</span>，一次卷积的参数量（MAC）为<span class="math inline">\(O(k*k*C_{in}*C_{out})\)</span>。其中卷积后的大小为<span class="math inline">\(M=\frac{M-k+2*padding}{stride}+1\)</span>；若希望卷积前后大小一致，则需设<span class="math inline">\(padding=\frac{k-1}{2}\)</span>且<span class="math inline">\(stride=1\)</span>。</p>
+</blockquote>
+<h4 id="定义">定义</h4>
+<p><span class="math display">\[
+(f*g)(n) = \int_{-\infin}^{+\infin}f(x)g(n-x) \mathrm{d} x
+\]</span></p>
+<p>两个在某种角度上具有一定关联性的函数 f 与 g，在二者自变量之和为一常数 n 的约束（更一般化地，在二者自变量的线性组合为一常数的约束）下，两函数之积在某个区间上的积分称为这两个函数在该区间上的卷积。</p>
+<p>总之，两函数的卷积是两函数之积在某种线性组合（如 x+y=n）的约束下的特殊积分。</p>
+<h4 id="命名"><a href="https://www.zhihu.com/question/54677157/answer/141245297">命名</a></h4>
+<p>之所以称为卷积，是因为该运算的结果是两函数的张量积构成的平面（或超平面）沿两函数各自自变量线性组合等式约束的轨迹做卷褶得到的降维的线（或超平面）上的某一点（线性组合等式约束决定的点）的值。</p>
+<p>简而言之就是<strong>将张量积卷褶后的重合点之和即为卷积</strong>。</p>
+<h4 id="理解角度"><a href="https://blog.csdn.net/tiger_v/article/details/79675359">理解角度</a></h4>
+<ol type="1">
+<li><p>从对单通道二维图像做卷积的角度理解：</p>
+<p>f 为图像像素值对位置的函数，g 为实现某种功能的滤波器（又称为卷积核、模板），其具体操作为对两矩阵的哈达玛积的所有元素求和。</p>
+<ul>
+<li>能实现这种这种功能的原因是由卷积结果的形式决定的：卷积结果的形式可表示为<span class="math inline">\(f*g = g(f) = af_{0}+bf_2+...\)</span>，对邻域像素的线性组合即为<a href="https://blog.csdn.net/purgle/article/details/73728940">线性滤波器</a>。</li>
+<li>而为了实现滤波器这种功能，所以采用卷积的形式来操作：在单通道二维图像上实现对邻域像素的线性组合抽象为数学表示便是，两向量在索引服从一定关系的约束下在某个索引区间内的内积，即卷积。</li>
+</ul></li>
+<li><p>要想实现更加复杂的非线性滤波器，需要用一大堆的简易非线性滤波器，并通过很多层的组合得到。NIN（network in network）提出了一种“偷吃步”的方法（MLPconv）来降低计算复杂度和模型复杂度。可从两个角度来理解 MLPconv：</p>
+<p>（假设第一层的卷积核与输入图像相同大小）</p>
+<ul>
+<li><p>从结构形式的角度：<span class="math inline">\(k_1\)</span> 个卷积核输出到 <span class="math inline">\(k_1\)</span> 个神经元上，再假设第二层的卷积核与第一层神经元数大小相同，<span class="math inline">\(k_2\)</span> 个卷积核输出到 <span class="math inline">\(k_2\)</span> 个神经元上，即对<span class="math inline">\(k_1\)</span>种线性滤波的非线性激活结果再次进行<span class="math inline">\(k_2\)</span>种线性滤波，依此继续连接；能够由此实现任意一种非线性滤波器的原因与传统神经网络能够模拟任意函数的原理一样。</p>
+<p>故 <strong>MLPconv 本质为一个传统的神经网络（理解本质时用）</strong>，即将一个传统的神经网络作为卷积核，神经网络隐藏神经元数由卷积核数决定，即希望得到的非线性滤波器个数。</p>
+<p>由此，可将线性滤波器看作 MLPconv 的特殊情况，即一个感知机。</p></li>
+<li><p>从物理含义的角度：<span class="math inline">\(k_1\)</span> 个卷积核输出<span class="math inline">\(k_1\)</span>个特征图（此处每个图仅为一个点），而第二层的每个感知机是对<span class="math inline">\(k_1\)</span>个通道的特征图的同一个位置作线性组合操作，然后做非线性激活，该操作可理解为对<span class="math inline">\(k_1\)</span>个通道的特征图的同一个位置做 1×1 大小卷积核的卷积，或者理解为对<span class="math inline">\(k_1\)</span>级联的特征图做 1×1 大小卷积核的池化（理解为池化，是目的导向的，因为此操作的目的是对不同特征进行不同方向的聚合；其与池化不同，因为参数都是要学习的，而非固定的）；能够由此实现任意一种非线性滤波器的原因是不同特征的不同方向的多次聚合能够得到一种任意一种非线性特征。</p>
+<p>故 <strong>MLPconv 等价于一个 k×k 卷积层后缀数个 1×1 卷积层（思考网络结构及实际编码时用）</strong>。</p>
+<p>其中 1×1 卷积层也有人称之为跨通道参数的级联池化（cccp），实现跨通道的信息整合。</p>
+<p>1×1 卷积层的意义主要在于线性组合，并作非线性激活；想当于做了一次非线性组合。</p></li>
+</ul>
+<p>简单来说，<strong>非 NIN 结构的多层卷积是跨越了不同尺寸的感受野，在相同范围内的感受野只有一次简易非线性滤波；而 NIN 结构的多层卷积是作用在同一尺寸上的感受野，可认为在相同范围内的感受野由一次复杂的非线性滤波，能够提取更强的非线性特征。</strong></p></li>
+<li><p>针对不同尺度特征自然需要不同大小的卷积核，考虑到不同尺度特征可能属于同一级别的抽象，故提出了 inception 结构。该结构本质是对几个不同大小卷积核的 MLPconv 的结果的 <em>concat</em>。该结构的合理性是基于以下两点原因的：</p>
+<ul>
+<li>MLPconv 本质为一个小型神经网络，1×1 卷积层与 k×k 卷积层的先后顺序影响不大，又考虑到通道数庞大的可能性，先做 1×1 卷积可以极大地减少参数数量，提高泛化能力。</li>
+<li>不同尺度特征自然需要不同大小的卷积核，而不同尺度特征可能属于同一级别的抽象。</li>
+</ul>
+<p>inception-v1 结构如下图所示（从左至右，为提取尺度越来越大的特征，最左侧的特征可认为是在该抽象程度上尺度为零的特征）：</p></li>
+</ol>
+<figure>
+<img src="https://i.loli.net/2021/10/01/yGWzTbsKfJ6tha3.jpg" alt="inception_v1" /><figcaption aria-hidden="true">inception_v1</figcaption>
+</figure>
+<p>​ 对 inception module 如此设计的理解：</p>
+<ul>
+<li>结合 NIN 结构和 1 * 1 卷积可升降维减少参数，实现在相同尺寸的感受野中提取到更加非线性的特征；</li>
+<li>考虑到 GPU 只对密集矩阵计算作了优化，没有对稀疏矩阵计算做优化，又考虑到稀疏矩阵可分解成密集矩阵计算的原理，通过在多个尺寸上同时进行卷积再聚合的方式，实现网络的稀疏结构。比如当要输出一个 256 通道的 feature map 时，若只用一种卷积核进行卷积，256 个输出特征便均是在同一尺度范围上的，极有可能是一个稀疏分布的特征集；而 inception 结构会在多个尺度上提取特征（如 1 * 1 的提取 96 个特征，3 * 3 的提取 96 个特征，5 × 5 的提取 64 个特征），这样相关性更强的低级特征便会被组合称为高级特征，而<strong>不相关的低级特征（非关键特征）便会被弱化而不使用</strong>，同样输出 256 个特征，inception 结构输出的特征“冗余”信息会更少，从而间接地提高了网络的稀疏性。（因为网络越稀疏收敛速度越快，且越不易过拟合，故都追求更加稀疏的网络）</li>
+</ul>
+<ol start="4" type="1">
+<li>VGG-net 中的 trick：用多个 3×3 卷积核代替更大面积的卷积核，这不仅减少了参数，减轻过拟合，而且多次卷积代替一次卷积的方案更增加了非线性，有利于特征的提取。后来在 inception-v3 中发现，非对称的卷积结构拆分比用多个 3×3 卷积进行拆分的效果更明显，参数也更少。这被称为 Factorization in Small Convolutions 思想。</li>
+</ol>
+<figure>
+<img src="https://i.loli.net/2021/10/01/1aTfqXzZkLSbdDp.png" alt="inceptionv1v2v3" /><figcaption aria-hidden="true">inceptionv1v2v3</figcaption>
+</figure>
+<ol start="5" type="1">
+<li>ResNet 中的 trick：引入shortcut</li>
+</ol>
+<p><img src="https://i.loli.net/2021/10/01/Xp39IkDyQgW8q6i.jpg" alt="resnet_v1_v2" style="zoom:50%;" /></p>
+<ul>
+<li>学习残差，解决了网络退化问题；</li>
+<li>使得信息更容易在各层间流动，实现了前向的特征重用；</li>
+<li>使得深层网络成为了很多浅层网络的集成，比如一个残差块只有两条通路的 resnet，若有 4 个残差块，那便是 <span class="math inline">\(2^4\)</span> 个浅层网络的集成。</li>
+</ul>
+<p><img src="https://i.loli.net/2021/10/01/Cb2XA5R3jt1ulNP.png" alt="resnet_structure" style="zoom: 33%;" /></p>
+<ol start="6" type="1">
+<li>DenseNet：</li>
+</ol>
+<p><img src="https://i.loli.net/2021/10/01/LCbKStD2vMq3HVe.jpg" alt="densenet_structure" style="zoom: 75%;" /></p>
+<ul>
+<li>与其多次学习冗余特征，特征复用是一种更好的特征提取方式。</li>
+<li>在一个DenseBlock中，每一层（最后一层除外）的输入为目前的全局状态，输出为需要给全局状态添加的补充特征，故也将每层的输出通道数称为GrouthRate；最后一层根据已得到的全局状态输出该抽象层级的最终特征，进入到下一个DenseBlock中。</li>
+<li>在两个DenseBlock之间都会有一个transition layer( BN+Conv1x1+Pooling2x2 )，起到的作用有：先验（平移不变性），提高后续Block的感受野大小，减少计算量与内存消耗。</li>
+</ul>
+<h4 id="在神经网络上的实现方法及理由任务依赖的正则化">在神经网络上的实现方法及理由（任务依赖的正则化）</h4>
+<ol type="1">
+<li>局部感知：每个神经元其实没有必要对全局图像进行感知，只需要对局部进行感知，然后在更高层将局部的信息综合起来就得到了全局的信息；</li>
+<li>参数共享：图像具有一种“静态性”的属性：图像的一部分的统计特性与某些其他部分是一样的，即平移不变性的特征。由此提出了卷积核和特征图的概念。</li>
+</ol>
+<h3 id="池化polling">池化（polling）</h3>
+<p>池化过程本质为特征突出过程，去除特征图中的无用像素点。（查看西瓜书的样本不均衡问题）</p>
+<h2 id="卷积核类型"><a href="https://www.sohu.com/a/160696860_610300">卷积核类型</a></h2>
+<h2 id="对深度模型的一些优化">对深度模型的一些优化</h2>
+<p><img src="https://i.loli.net/2021/10/01/EVRrdGS1h8OWbXF.jpg" alt="issues_deeplearning" style="zoom:50%;" /></p>
+<h3 id="relu">ReLu</h3>
+<p>https://www.zhihu.com/question/59031444/answer/177786603</p>
+<h3 id="lrn"><a href="https://blog.csdn.net/hduxiejun/article/details/70570086">LRN</a></h3>
+<p>LRN层，对局部神经元的活动创建竞争机制，使得其中响应比较大的值变得相对更大，并抑制其他反馈较小的神经元，增强了模型的泛化能力。</p>
+<p>很少再用，现多用 dropout。</p>
+<h3 id="dropout">dropout</h3>
+<blockquote>
+<ol type="1">
+<li>一种更恶化环境训练、更舒服环境战斗的思想。</li>
+<li>Hinton 认为 dropout 是通过特殊的训练策略实现的隐式的模型集成。</li>
+</ol>
+</blockquote>
+<ol type="1">
+<li>达到了一种Vote的作用。对于全连接神经网络而言，我们用相同的数据去训练5个不同的神经网络可能会得到多个不同的结果，我们可以通过一种vote机制来决定多票者胜出，因此相对而言提升了网络的精度与鲁棒性。同理，对于单个神经网络而言，如果我们将其进行分批，虽然不同的网络可能会产生不同程度的过拟合，但是将其公用一个损失函数，相当于对其同时进行了优化，取了平均，因此可以较为有效地防止过拟合的发生。</li>
+<li>减少神经元之间复杂的共适应性。当隐藏层神经元被随机删除之后，使得全连接网络具有了一定的稀疏化，从而有效地减轻了不同特征的协同效应。也就是说，有些特征可能会依赖于固定关系的隐含节点的共同作用，而通过Dropout的话，就有效地组织了某些特征在其他特征存在下才有效果的情况，增加了神经网络的鲁棒性。</li>
+</ol>
+<p>简而言之：Dropout在实践中能很好工作是因为其在训练阶段阻止了神经元的共适应。</p>
+<h3 id="应对梯度爆炸弥散">应对梯度爆炸/弥散</h3>
+<h3 id="resnet">ResNet</h3>
+<blockquote>
+<p>ResNet 是一种学习残差的框架，即用非线性层去显式地拟合一个残差映射，而不再是去拟合一个期望的潜在映射。</p>
+<p>解决了随着网络层数不断加深，求解器不能找到解决途径的问题。</p>
+<p><a href="https://github.com/bkseastone/Amadeus/tree/master/my_toolbox/resnet">code: resnet_tf</a></p>
+</blockquote>
+<p>深度神经网络在 ReLU 和 BN 层的加入后，网络变深不再有梯度弥散的问题， 但却会出现随着网络的加深，准确度反而下降的现象，即退化现象。</p>
+<p>ResNet 使得下述所需的函数变得更易拟合求解得到：通过几个非线性映射的堆叠去拟合一个恒等映射，由此使得对某个低级特征贡献不大的输入可以一下子被拉到更深的层，其对更高级特征的贡献由更深层的权重学习到。至于输入对哪种抽象特征的贡献度更大，在求解最优化的过程中可自动学习到。</p>
+<p>从集成学习的观点，可以将更深的网络看做是在增加该指数的幂次（ ResNet ），将更宽的网络看做是在增加该指数的基底（ ResNeXt ）。</p>
+<p><img src="https://i.loli.net/2021/10/01/yRTXnC7OpxJFsHm.jpg" alt="resnet_pros" style="zoom:50%;" /></p>
+<h2 id="实现方面的细节">实现方面的细节</h2>
+<h3 id="反向传播">反向传播</h3>
+<h4 id="卷积层的梯度反传">卷积层的梯度反传</h4>
+<p>卷积神经网络中的梯度反传是 2D，与传统神经网络中的 1D 反传不同，但其数学本质相同（见<a href="http://redmud.xyz/2018/03/11/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E2%80%94%E2%80%94%E5%89%8D%E9%A6%88%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/">梯度反传</a>），只是表现形式上有略微的<a href="https://blog.csdn.net/zy3381/article/details/44409535">不同</a>：</p>
+<p><img src="https://i.loli.net/2021/10/01/M7a8TNVgomKR4FU.png" alt="conv_delta_backprocess" style="zoom: 67%;" /></p>
+<ol type="1">
+<li>当已得到卷积层误差，求对卷积核参数的梯度时，以卷积层误差为卷积核，对与卷积核参数处于同一层的 feature map 做卷积（1D 反传时是误差与激活值直接做内积）得到在卷积核参数处的梯度；</li>
+<li>若要继续反传得到图中卷积层的上一层（图中称为池化层是默认一个卷机后接一个池化）误差，须将卷积核参数旋转 180 度（不是转置）后对卷积层误差做 full 类型（其他类型还有 valid，same ）的卷积，便得到了上一层的误差，进而递归地用第一条。</li>
+</ol>
+<h4 id="池化层的梯度反传">池化层的梯度反传</h4>
+<p>池化层不需要计算梯度，因为没有要训练的参数，但在梯度反传时，误差的形状需要发生变化以保证和上一层的参数能够对位，处理方式的原则是：<strong>保证传递的误差总和不变</strong>：</p>
+<ol type="1">
+<li>对于均值池化，便是把误差每个元素等分成n份传递给前一层；</li>
+<li>对于最大值池化，需要先在前传时记住最大值的位置，反传时将误差对应到所记录的位置上，其他位置置零。</li>
+</ol>
+<h2 id="后记">后记</h2>
+<p>对 CNN 的研究主要有三种方法：</p>
+<ol type="1">
+<li>观察学习到的 filter</li>
+<li>通过对抗样本</li>
+<li>通过破坏网络结构，观察性能变化</li>
+</ol>
+<h3 id="调参"><a href="https://chenrudan.github.io/blog/2015/08/04/dl5tricks.html">调参</a></h3>
+<ol type="1">
+<li>训练时loss或者权重出现NaN问题：<a href="https://blog.csdn.net/Strive_For_Future/article/details/81625006">ref</a>；</li>
+</ol>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

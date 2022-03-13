@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:33Z" />
+  <title>深度学习:基本件</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">深度学习:基本件</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#attention"><span>Attention</span></a></li>
+<li><a href="#损失函数">损失函数</a>
+<ul>
+<li><a href="#应对样本不均衡">应对样本不均衡</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="attention"><a href="https://xdaping.github.io/posts/nlp-self-attention-models.html">Attention</a></h1>
+<figure>
+<img src="https://img.vim-cn.com/98/25009c5201091fbab8ffd2f2a92b353d2ae523.jpg" alt="attention计算过程" /><figcaption aria-hidden="true">attention计算过程</figcaption>
+</figure>
+<p>其中query为目标语言端的h，key和value也为源语言端的两个不同空间的h，通过点积等方法计算相似度后得到该时刻t的a，将value与a做加权求和后得到attention value，即得到该t时刻目标语言端的h。</p>
+<p>简单来说就是将当前时刻的目标语言与源语言的各个向量求个相似度，用来对源语言的各个向量做加权求和，从而通过attention机制实现源语言与目标语言的对齐。</p>
+<p>attention可以有很多种计算方式: 加性attention、点积attention，还有带参数的计算方式。</p>
+<p>以点积attention为例：</p>
+<ol type="1">
+<li>self-attention的q, k, v都是同一个输入, 即当前序列由上一层输出的高维表达。</li>
+<li>cross-attention的q代表当前序列，k,v是同一个输入，对应的是encoder最后一层的输出结果(对decoder端的每一层来说，保持不变)</li>
+</ol>
+<p>而每一层线性映射参数矩阵都是独立的，所以经过映射后的Q, K, V各不相同，模型参数优化的目标在于将q, k, v被映射到新的高维空间，使得每层的Q, K, V在不同抽象层面上捕获到q, k, v之间的关系。一般来说，底层layer捕获到的更多是lexical- level的关系，而高层layer捕获到的更多是semantic-level的关系。</p>
+<h1 id="损失函数">损失函数</h1>
+<h2 id="应对样本不均衡">应对样本不均衡</h2>
+<h3 id="focal-loss">focal loss</h3>
+<p><span class="math display">\[
+loss = \{^{-\alpha (1-y&#39;)^\gamma \log y&#39;, y=1}
+_{-(1-\alpha)(y&#39;)^\gamma \log (1-y&#39;), y=0}.
+\]</span></p>
+<ul>
+<li>focal loss 用于在训练过程中提高难分样本的权重，降低易分样本的权重，即尽可能地将计算资源用在难分样本上，从而提高模型的收敛能力；或者可认为是 AdaBoost 在深度学习上的应用（resnet 是 GradientBoost 在深度学习上的应用）。</li>
+<li>其中 <span class="math inline">\(\alpha\)</span> 用以平衡正负样本数据集本身的不平衡，与 focal loss 无关。</li>
+<li><span class="math inline">\(\gamma\)</span> 表示对难分样本关注的程度。</li>
+</ul>
+<h4 id="应用">应用</h4>
+<h5 id="一阶目标检测">一阶目标检测</h5>
+<p>对于二阶目标检测算法，有特征重采样过程，可在该过程中通过固定正负样本比例或在线困难样本挖掘（OHEM）使得前景和背景相对平衡；而一阶目标检测算法最多只能在数据集上做固定正负样本比例的处理，训练会被大量易分样本主导，导致模型难以收敛至更优解，focal loss 用 Boost 的方法解决了这个问题。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:34Z" />
+  <title>深度学习:边缘计算</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">深度学习:边缘计算</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#前言">前言</a>
+<ul>
+<li><a href="#asic-是未来发展方向"><span>ASIC 是未来发展方向</span></a></li>
+<li><a href="#性能指标">性能指标</a></li>
+</ul></li>
+<li><a href="#模型推理">模型推理</a>
+<ul>
+<li><a href="#tensorrt">tensorRT</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="前言">前言</h1>
+<h2 id="asic-是未来发展方向"><a href="https://baijiahao.baidu.com/s?id=1610466874421673569&amp;wfr=spider&amp;for=pc">ASIC 是未来发展方向</a></h2>
+<p>因下面两个趋势的消失，通用计算芯片的发展已趋于平缓，专用计算芯片开始进入大众视野：</p>
+<ol type="1">
+<li>摩尔定律：当价格不变时，集成电路上可容纳的元器件的数目，约每隔18-24个月便会增加一倍，性能也将提升一倍。</li>
+<li><a href="http://www.newsmth.net/nForum/#!article/CSArch/43360">Dennard Scaling</a> ：晶体管尺寸变小，功耗会同比变小，换句话说相同面积下功耗不变。</li>
+</ol>
+<h2 id="性能指标">性能指标</h2>
+<ol type="1">
+<li>所需计算量（FLOPs, float-point operations, 浮点运算次数）：比如对于 1 * 1 的卷积操作，当输入输出通道数分别为 c1, c2 时，FLOPs = c1 * h * w * c2；</li>
+<li>所需带宽量（MAC, memory access cost）：比如对于 1 * 1 的卷积操作，当输入输出通道数分别为 c1, c2 时，MAC = h * w * c1 + c1 * c2 + h * w * c2；</li>
+<li>数据吞吐量（Throughput）：单位时间内可以成功传输的数据数量；</li>
+<li>IOPS：单位时间内系统能处理的I/O请求数量，一般以每秒处理的I/O请求次数为单位，用于衡量磁盘性能；</li>
+<li><a href="https://community.emc.com/docs/DOC-28653">带宽（band width）：单位时间内可以传输的数据数量，即在传输管道中可以传递数据的能力</a>；
+<ul>
+<li>带宽为吞吐量的理想值，因为受各种低效率的影响，吞吐量常比带宽低很多</li>
+<li>带宽为链路上的可用带宽，只取决于链路时钟和信道编码，吞吐量为实际链路中每秒所能传送的比特数，为实际的测试性能</li>
+<li>性能监控工具显示 IOPS 低或者 Throughput 低于预期，先不要直接认为存储性能存在问题，搞清楚应用的 I/O 大小，再做后续判断</li>
+</ul></li>
+</ol>
+<h1 id="模型推理">模型推理</h1>
+<h2 id="tensorrt">tensorRT</h2>
+<h3 id="优化">优化</h3>
+<h4 id="layer-tensor-fusion">layer &amp; tensor fusion</h4>
+<p>在部署模型推理时，这每一层的运算操作都是由GPU完成的，具体是GPU通过启动不同的CUDA（Compute unified device architecture）核心来完成计算的，CUDA核心计算张量的速度是很快的，但是往往大量的时间是浪费在CUDA核心的启动和对每一层输入/输出张量的读写操作上面，这造成了内存带宽的瓶颈和GPU资源的浪费。</p>
+<p>故可通过合并计算图来优化推理：横向合并可以把卷积、偏置和激活层合并成一层CBR(conv+bias+relu)结构，只占用一个CUDA核心；纵向合并可以把结构相同，但是权值不同的层合并成一个更宽的层（多层输出的结构可借用该方法做输出层的解析加速，如下图所示），也只占用一个CUDA核心。</p>
+<figure>
+<img src="https://img.vim-cn.com/a9/e092ef3adb2f7ffd9b324a1338dad398dee535.jpg" alt="YOLOv3trt" /><figcaption aria-hidden="true">YOLOv3trt</figcaption>
+</figure>
+<h4 id="weight-activation-precision-calibration"><a href="https://arleyzhang.github.io/articles/923e2c40/">weight &amp; activation precision calibration</a></h4>
+<h4 id="others">others</h4>
+<ul>
+<li>kernel auto-tuning: TensorRT will pick the implementation from a library of kernels that delivers the best performance for the target GPU, input data size, filter size, tensor layout, batch size and other parameters.</li>
+<li>dynamic tensor memory: 在每个tensor的使用期间，TensorRT会为其指定显存，避免显存重复申请，减少内存占用和提高重复使用效率。</li>
+<li>multi-stream execution: Scalable design to process multiple input streams in parallel.</li>
+</ul>
+<h3 id="使用流程">使用流程</h3>
+<h4 id="build">build</h4>
+<p>build: Import and optimize trained models to generate inference engines.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 创建一个builder</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>IBuilder<span class="op">*</span> builder <span class="op">=</span> createInferBuilder<span class="op">(</span><span class="va">logger_</span><span class="op">);</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// 创建一个network对象，不过这时network对象只是一个空架子</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>INetworkDefinition<span class="op">*</span> network <span class="op">=</span> builder<span class="op">-&gt;</span>createNetwork<span class="op">();</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>ICaffeParser <span class="op">*</span>parser <span class="op">=</span> createCaffeParser<span class="op">();</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// 这一步之后network对象里面的参数才被填充，才具有实际的意义</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> blobNameToTensor <span class="op">=</span> parser<span class="op">-&gt;</span>parse<span class="op">(</span>deployFile<span class="op">,</span>                                                 modelFile<span class="op">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                                      <span class="op">*</span>network<span class="op">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                                      DataType<span class="op">::</span>kFLOAT<span class="op">);</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> s <span class="op">:</span> <span class="va">vOutputBlobNames_</span><span class="op">)</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  network<span class="op">-&gt;</span>markOutput<span class="op">(*</span>blobNameToTensor<span class="op">-&gt;</span>find<span class="op">(</span>s<span class="op">.</span>c_str<span class="op">()));</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">// 设置batchsize和工作空间，然后创建inference engine</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>builder<span class="op">-&gt;</span>setMaxBatchSize<span class="op">(</span><span class="va">maxBatchSize_</span><span class="op">);</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>builder<span class="op">-&gt;</span>setMaxWorkspaceSize<span class="op">(</span><span class="dv">16</span> <span class="op">&lt;&lt;</span> <span class="dv">20</span><span class="op">);</span> </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">// 调用buildCudaEngine时才会进行前述的层间融合或精度校准优化方式</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>ICudaEngine<span class="op">*</span> <span class="va">pEngine_</span> <span class="op">=</span> builder<span class="op">-&gt;</span>buildCudaEngine<span class="op">(*</span>network<span class="op">);</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>network<span class="op">-&gt;</span>destroy<span class="op">();</span> builder<span class="op">-&gt;</span>destroy<span class="op">();</span></span></code></pre></div>
+<p>解析caffe模型之后，必须要指定输出tensor，设置batchsize和工作空间。设置batchsize就跟使用caffe测试是一样的，设置工作空间是进行前述层间融合和张量融合的必要措施。层间融合和张量融合的过程是在调用<code>builder-&gt;buildCudaEngine</code>时才进行的。</p>
+<h4 id="deployment">deployment</h4>
+<p>deploy: Generate runtime inference engine for inference.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 创建上下文环境 context，用于启动kernel</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>IExecutionContext <span class="op">*</span>context <span class="op">=</span> <span class="va">pEngine_</span><span class="op">-&gt;</span>createExecutionContext<span class="op">();</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">//获取输入，输出tensor索引</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> inputIndex <span class="op">=</span> <span class="va">pEngine_</span><span class="op">-&gt;</span>getBindingIndex<span class="op">(</span>inputLayerName<span class="op">),</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> outputIndex <span class="op">=</span> <span class="va">pEngine_</span><span class="op">-&gt;</span>getBindingIndex<span class="op">(</span>outLayerName<span class="op">);</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Allocate GPU memory for Input / Output data</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span><span class="op">*</span> buffers <span class="op">=</span> malloc<span class="op">(</span><span class="va">pEngine_</span><span class="op">-&gt;</span>getNbBindings<span class="op">()</span> <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">void</span><span class="op">*));</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>cudaMalloc<span class="op">(&amp;</span>buffers<span class="op">[</span>inputIndex<span class="op">],</span> batchSize <span class="op">*</span> size_of_single_input<span class="op">);</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>cudaMalloc<span class="op">(&amp;</span>buffers<span class="op">[</span>outputIndex<span class="op">],</span> batchSize <span class="op">*</span> size_of_single_output<span class="op">);</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">//使用cuda 流来管理并行计算</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="dt">cudaStream_t</span> stream<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>cudaStreamCreate<span class="op">(&amp;</span>stream<span class="op">);</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">//从内存到显存，input是读入内存中的数据；buffers[inputIndex]是显存上的存储区域，用于存放输入数据</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>cudaMemcpyAsync<span class="op">(</span>buffers<span class="op">[</span>inputIndex<span class="op">],</span> </span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>                input<span class="op">,</span> </span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>                batchSize <span class="op">*</span> size_of_single_input<span class="op">,</span> </span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>                cudaMemcpyHostToDevice<span class="op">,</span> </span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>                stream<span class="op">);</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co">//启动cuda核计算</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>context<span class="op">.</span>enqueue<span class="op">(</span>batchSize<span class="op">,</span> buffers<span class="op">,</span> stream<span class="op">,</span> <span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">//从显存到内存，buffers[outputIndex]是显存中的存储区，存放模型输出；output是内存中的数据</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>cudaMemcpyAsync<span class="op">(</span>output<span class="op">,</span> </span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>                buffers<span class="op">[</span>outputIndex<span class="op">],</span> </span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>                batchSize <span class="op">*</span> size_of_single_output<span class="op">,</span> </span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>                cudaMemcpyDeviceToHost<span class="op">,</span> </span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>                stream<span class="op">));</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co">//如果使用了多个cuda流，需要同步</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>cudaStreamSynchronize<span class="op">(</span>stream<span class="op">);</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>cudaStreamDestroy<span class="op">(</span>stream<span class="op">);</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>cudaFree<span class="op">(</span>buffers<span class="op">[</span>inputIndex<span class="op">]);</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>cudaFree<span class="op">(</span>buffers<span class="op">[</span>outputIndex<span class="op">]);</span></span></code></pre></div>
+<p>deploy阶段主要完成推理过程，Kernel Auto-Tuning 和 Dynamic Tensor Memory 应该是在这里完成的。将上面一个步骤中的plan文件首先反序列化，并创建一个 runtime engine，然后就可以输入数据，然后输出分类向量结果或检测结果。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

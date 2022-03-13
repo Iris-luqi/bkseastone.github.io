@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:34Z" />
+  <title>机器学习:图像语义分割</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">机器学习:图像语义分割</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#定义">定义</a></li>
+<li><a href="#传统算法">传统算法</a>
+<ul>
+<li><a href="#基于阈值">基于阈值</a></li>
+<li><a href="#基于边缘">基于边缘</a></li>
+<li><a href="#基于区域">基于区域</a></li>
+<li><a href="#基于图论">基于图论</a></li>
+<li><a href="#基于能量泛函">基于能量泛函</a></li>
+</ul></li>
+<li><a href="#深度神经网络算法">深度神经网络算法</a>
+<ul>
+<li><a href="#全卷积网络fcn">全卷积网络（FCN）</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="定义">定义</h1>
+<p>根据灰度、颜色、纹理、形状等特征，将数字图像划分成几个互不相交的区域的过程称为图像分割；是由图像处理到图像分割的关键步骤。</p>
+<h1 id="传统算法">传统算法</h1>
+<h2 id="基于阈值">基于阈值</h2>
+<p>基本思想为根据图像的灰度分布来确定一个或多个灰度阈值，进而将图像进行划分。</p>
+<p>该方法的关键为确定一个函数来求解最佳灰度阈值。</p>
+<h2 id="基于边缘">基于边缘</h2>
+<p>考虑到分割得到的区域边缘通常会发生某些特征（灰度、颜色、纹理、形状等）的突变，又由经验得知，边缘的灰度值阶跃型（一阶导数的极值点，可用Roberts算子、Prewitt算子或Sobel算子求得）或屋顶型（函数的极值点）的突变，故该方法通常采用基于灰度值的边缘检测。</p>
+<h2 id="基于区域">基于区域</h2>
+<blockquote>
+<p>同一区域内的图像特征必有一定的相似性，故可通过设计某种相似性准则来将图像划分为不同的区域。</p>
+</blockquote>
+<h3 id="种子区域生长法">种子区域生长法</h3>
+<p>从代表不同生长区域的种子像素开始，将种子像素邻域里符合一定条件的像素合并到种子像素所代表的生长区域中，并将新添加的像素也作为种子像素开始新的合并过程，直到找不到符合条件的像素为止，属于 bottom-up 的方法。</p>
+<p>该方法的关键为初始种子像素的选择和作为条件的生长准则。</p>
+<h3 id="区域分裂合并法">区域分裂合并法</h3>
+<p>首先将图像任意分割成互不相交的几个区域，然后按照一定的条件将这些区域进行分裂或者合并从而完成图像的分割，属于 top-down 的方法。</p>
+<h3 id="分水岭法">分水岭法</h3>
+<p>一种基于拓扑理论的形态学的分割方法，常结合距离变换实现图像的分割，详见<a href="https://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html">demo: Image Segmentation with Distance Transform and Watershed Algorithm</a>。</p>
+<h2 id="基于图论">基于图论</h2>
+<p>待加： https://blog.csdn.net/zhangjunp3/article/details/79672098</p>
+<h2 id="基于能量泛函">基于能量泛函</h2>
+<p>待加： https://blog.csdn.net/zhangjunp3/article/details/79672098</p>
+<h1 id="深度神经网络算法">深度神经网络算法</h1>
+<h2 id="全卷积网络fcn">全卷积网络（FCN）</h2>
+<blockquote>
+<p>全卷积网络是从抽象的特征中恢复出每个像素所属的类别，即从图像级别的分类进一步延伸到像素级别的分类。</p>
+</blockquote>
+<p>将最后的输出是1000张heatmap经过upsampling变为原图大小的图片，然后通过逐个像素地求其在1000张图像该像素位置的最大数值描述（概率）作为该像素的分类。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

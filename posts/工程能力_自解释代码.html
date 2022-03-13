@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:34Z" />
+  <title>工程能力:自解释代码</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">工程能力:自解释代码</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#编写可读代码">编写可读代码</a></li>
+</ul>
+</nav>
+<h2 id="编写可读代码">编写可读代码</h2>
+<blockquote>
+<p>推荐阅读：《编写可读代码的艺术》、《Code Complete》、《设计模式》、《重构-改善既有代码的设计》、经典开源项目</p>
+</blockquote>
+<h3 id="自解释代码">自解释代码</h3>
+<p><strong>目标</strong>：脑细胞死亡量达到最少</p>
+<p><strong>方法</strong>：</p>
+<ol type="1">
+<li>命名
+<ul>
+<li>信息：10行内的函数能结合上下文看懂即可；更长的，则需有足够的信息量（后缀单位，后缀限定词，等）</li>
+<li>有效：无重复表达含义的词（如ConvertToXXX），不用歧义词（如filter），等</li>
+<li>习惯：函数用动宾，<code>getxxx()</code>,<code>setxxx()</code>只用于表达简单操作，成对API参数含义一致，测试函数命名<code>Test_&lt;function&gt;_&lt;测试环境&gt;_&lt;期望输出&gt;</code>等</li>
+</ul></li>
+<li>注释
+<ul>
+<li>WHY：用常量设计该数值的原因给常量加注释，可能的陷阱也需加注释，等</li>
+<li>WHAT：给函数加注释以便更快的了解代码的功能，而直接看代码一眼就能知道含义的无需加注释</li>
+<li>HOW：用注释解释比较HACK的地方</li>
+</ul></li>
+<li>逻辑
+<ul>
+<li>为了代码的可读性/减少注释，尽量不要省略中间变量/函数</li>
+</ul></li>
+<li>结构
+<ul>
+<li>减少嵌套，避免大脑不断的压栈：将边界判断分条置前</li>
+<li>善用空行</li>
+</ul></li>
+</ol>
+<h3 id="编写代码的设计原则">编写代码的设计原则</h3>
+<ol type="1">
+<li>谋定而后动：单一职责原则，使得业务逻辑更清晰</li>
+<li>重构：
+<ul>
+<li>当产生三次重构冲动时再去重构</li>
+<li>保证接口与实现分离（用新的类实现，以达到接口相同，实现不同的目的），使得代码只依赖于接口，以便于版本的迭代更新</li>
+<li>局部重构，持续集成</li>
+</ul></li>
+</ol>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

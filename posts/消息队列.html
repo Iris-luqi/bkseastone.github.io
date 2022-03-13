@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:33Z" />
+  <title>消息队列</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">消息队列</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#kafka">kafka</a></li>
+</ul>
+</nav>
+<h2 id="kafka">kafka</h2>
+<h3 id="安装">安装</h3>
+<p>下载安装包：http://kafka.apache.org/quickstart</p>
+<p>准备java8环境：cat /opt/sun-java8/sun-java8.sh &gt;&gt; ~/.bashrc &amp;&amp; source ~/.bashrc</p>
+<p>wget https://downloads.apache.org/kafka/3.0.0/kafka_2.13-3.0.0.tgz</p>
+<p>tar -xzvf kafka_2.13-3.0.0.tgz &amp;&amp; cd kafka_2.13-3.0.0</p>
+<p>启动Zookeeper：</p>
+<p>nohup bin/zookeeper-server-start.sh config/zookeeper.properties &amp;&gt; zookeeper-server-start.log &amp; # Start the ZooKeeper service</p>
+<pre class="shell"><code>dataDir=/home/work/.tmp/zookeeper
+clientPort=2181
+maxClientCnxns=0
+admin.enableServer=false</code></pre>
+<p>启动Kafka：</p>
+<p>nohup bin/kafka-server-start.sh config/server.properties &amp;&gt; kafka-server-start.log &amp; # Start the Kafka broker service</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">broker.id=0</span>  </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">log.dirs=/home/work/.tmp/kafka-logs</span>    </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">num.partitions=1</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 生效时间</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Messages are immediately written to the filesystem but by default we only fsync() to sync</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># the OS cache lazily. The following configurations control the flush of data to disk.</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># There are a few important trade-offs here:</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">#    1. Durability: Unflushed data may be lost if you are not using replication.</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">#    2. Latency: Very large flush intervals may lead to latency spikes when the flush does occur as there will be a lot of data to flush.</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">#    3. Throughput: The flush is generally the most expensive operation, and a small flush interval may lead to excessive seeks.</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co"># The settings below allow one to configure the flush policy to flush data after a period of time or</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co"># every N messages (or both). This can be done globally and overridden on a per-topic basis.                                                                                                                                                                                                         </span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co"># The number of messages to accept before forcing a flush of data to disk</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="ex">log.flush.interval.messages=1000</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co"># The maximum amount of time a message can sit in a log before we force a flush</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="ex">log.flush.interval.ms=1000</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co"># 时效时间</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co"># The following configurations control the disposal of log segments. The policy can</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co"># be set to delete segments after a period of time, or after a given size has accumulated.</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co"># A segment will be deleted whenever *either* of these criteria are met. Deletion always happens</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="co"># from the end of the log.</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co"># The minimum age of a log file to be eligible for deletion due to age</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="ex">log.retention.hours=168</span>  <span class="co"># 7 days</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co"># A size-based retention policy for logs. Segments are pruned from the log unless the remaining</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co"># segments drop below log.retention.bytes. Functions independently of log.retention.hours.                                                                                                                       </span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="ex">log.retention.bytes=10737418240</span>  <span class="co"># 10GB</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co"># The maximum size of a log segment file. When this size is reached a new log segment will be created.</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="ex">log.segment.bytes=1073741824</span>  <span class="co"># 1GB</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co"># The interval at which log segments are checked to see if they can be deleted according</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co"># to the retention policies</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="ex">log.retention.check.interval.ms=300000</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="ex">zookeeper.connect=localhost:2181</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="ex">zookeeper.connection.timeout.ms=18000</span></span></code></pre></div>
+<h3 id="使用">使用</h3>
+<p>创建一个<em>topic</em>：</p>
+<p>bin/kafka-topics.sh –create –topic <em>my-topic</em> –bootstrap-server localhost:9092 –partitions 1 –replication-factor 1</p>
+<h4 id="python">python</h4>
+<p>用pykafka.KafkaClient消费，用kafka.KafkaProducer生产。</p>
+<h4 id="shell">shell</h4>
+<p>发送消息： bin/kafka-console-producer.sh –broker-list localhost:9092 –topic test // 执行kafka-console-producer.sh命令后，在控制台输入文本，每行是一条消息。结束输入通过Ctrl-C退出。</p>
+<p>接收数据：bin/kafka-console-consumer.sh –topic my-topic –from-beginning –bootstrap-server localhost:9092</p>
+<p>查看所有Topic： bin/kafka-topics.sh –bootstrap-server 127.0.0.1:9092 –list</p>
+<p>kafka-topics.sh使用，以下是主要参数项：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--alter</span> 修改副本的数量</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">--bootstrap-server</span> 连接的kafka地址，不再需要直接连接zookeeper地址</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">--command-config</span> 传递给管理客户端的配置文件</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">--config</span> 主题配置覆盖</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">--create</span> 创建新的topic</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="ex">--delete</span> 删除topic</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="ex">--delete-config</span> 删除已经存在的topic配置</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">--describe</span> 描述topic详情</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="ex">--list</span> 列出所有topic</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="ex">--partitions</span> 分区数量</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="ex">--replica-assignment</span> 指定副本对应节点关系</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="ex">--replication-factor</span> 主题的副本数</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="ex">--topic</span> 主题名</span></code></pre></div>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

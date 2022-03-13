@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:32Z" />
+  <title>shell</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">shell</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#sed">sed</a></li>
+<li><a href="#awk">awk</a></li>
+<li><a href="#curl">curl</a></li>
+<li><a href="#requests">requests</a></li>
+<li><a href="#shell-中的括号">shell 中的括号</a></li>
+</ul>
+</nav>
+<h2 id="sed">sed</h2>
+<p>相对于vim 采用的是交互式文本编辑模式，我们可以用键盘命令来交互性地插入、删除或替换数据中的文本。sed 采用的是流编辑模式，最明显的特点是，在 sed 处理数据之前，需要预先提供一组规则，sed 会按照此规则来编辑数据。</p>
+<p>sed 会根据脚本命令来处理文本文件中的数据，这些命令要么从命令行中输入，要么存储在一个文本文件中，此命令执行数据的顺序如下：</p>
+<ol type="1">
+<li>每次仅读取一行内容；</li>
+<li>根据提供的规则命令匹配并修改数据。注意，sed 默认不会直接修改源文件数据，而是会将数据复制到缓冲区中，修改也仅限于缓冲区中的数据；</li>
+<li>将执行结果输出。</li>
+</ol>
+<p>当一行数据匹配完成后，它会继续读取下一行数据，并重复这个过程，直到将文件中所有数据处理完毕。</p>
+<p>sed [OPTION]… {script-only-if-no-other-script} [input-file]…</p>
+<p>OPTION：</p>
+<ul>
+<li>-i，直接修改源文件</li>
+<li>-n，仅显示script处理后的结果</li>
+</ul>
+<h3 id="sed-s-替换脚本命令">sed s 替换脚本命令</h3>
+<p>此命令的基本格式为：</p>
+<p>[address]s/pattern/replacement/flags</p>
+<p>其中，address 表示指定要操作的具体行，pattern 指的是需要替换的内容，replacement 指的是要替换的新内容。flags标记及功能如下：</p>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 85%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">flags 标记</th>
+<th style="text-align: left;">功能</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">n</td>
+<td style="text-align: left;">1~512 之间的数字，表示指定要替换的字符串出现第几次时才进行替换，例如，一行中有 3 个 A，但用户只想替换第二个 A，这是就用到这个标记；</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">g</td>
+<td style="text-align: left;">对数据中所有匹配到的内容进行替换，如果没有 g，则只会在第一次匹配成功时做替换操作。例如，一行数据中有 3 个 A，则只会替换第一个 A；</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">p</td>
+<td style="text-align: left;">会打印与替换命令中指定的模式匹配的行。此标记通常与 -n 选项一起使用。</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w file</td>
+<td style="text-align: left;">将缓冲区中的内容写到指定的 file 文件中；</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">&amp;</td>
+<td style="text-align: left;">用正则表达式匹配的内容进行替换；</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">匹配第 n 个子串，该子串之前在 pattern 中用 () 指定。</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">\</td>
+<td style="text-align: left;">转义（转义替换部分包含：&amp;、 等）。</td>
+</tr>
+</tbody>
+</table>
+<p>例：</p>
+<pre class="shell"><code>$ # 指定要替换的字符串出现第几次时才进行替换
+$ echo &quot;This is a test of the test script.&quot; | sed &#39;s/test/trial/2&#39;
+This is a test of the trial script.
+$ # 对一行中所有匹配到的内容进行替换
+$ echo -e &quot;This is a test of the test script.\nThis is a different line.&quot; | sed &#39;s/test/trial/g&#39;
+This is a trial of the trial script.
+This is a different line.
+$ # 只输出被替换命令修改过的行
+$ echo -e &quot;This is a test of the test script.\nThis is a different line.&quot; | sed -n &#39;s/test/trial/gp&#39;
+This is a trial of the trial script.
+$ # 对正则表达式匹配到的内容进行前后修饰
+$ echo -e &quot;h1Helloh1\nh2Helloh2\nh3Helloh3&quot; | sed &#39;/h[0-9]/{s//\&lt;&amp;\&gt;/1;s//\&lt;&amp;\&gt;/2}&#39;
+&lt;h1&gt;Hello&lt;h1&gt;
+&lt;h2&gt;Hello&lt;h2&gt;
+&lt;h3&gt;Hello&lt;h3&gt;</code></pre>
+<h3 id="sed-d-替换脚本命令">sed d 替换脚本命令</h3>
+<p>删除文本中的特定行</p>
+<p>例：</p>
+<pre class="shell"><code>$ # 删除某个区间内的行
+$ echo -e &quot;line1\nline2\nline3\nline4\nline5\nline6&quot; | sed &#39;2,4d&#39;
+line1
+line5
+line6
+$ # 删除从某行开始到文件末尾的所有的内容
+$ echo -e &quot;line1\nline2\nline3\nline4\nline5\nline6&quot; | sed &#39;2,$d&#39;
+line1</code></pre>
+<h3 id="sed-a-和-i-脚本命令">sed a 和 i 脚本命令</h3>
+<p>a 命令表示在指定行的后面附加一行，i 命令表示在指定行的前面插入一行。</p>
+<p>例：</p>
+<pre class="shell"><code>$ # 在指定行的后面附加
+$ echo -e &quot;line1\nline2\nline3\nline4&quot; | sed &#39;3a\This is one line of new text.\nThis is another line of new text.&#39;
+line1
+line2
+line3
+This is one line of new text.
+This is another line of new text.
+line4
+$ # 在指定行的前面插入一行
+$ echo -e &quot;line1\nline2\nline3\nline4&quot; | sed &#39;3i\This is one line of new text.\nThis is another line of new text.&#39;
+line1
+line2
+This is one line of new text.
+This is another line of new text.
+line3
+line4</code></pre>
+<h3 id="sed-c-替换脚本命令">sed c 替换脚本命令</h3>
+<p>c 命令表示将指定行中的所有内容，替换成该选项后面的字符串。</p>
+<pre class="shell"><code>$ echo -e &quot;line1\nline2\nline3\nline4&quot; | sed &#39;3c\This is a changed line of text.&#39;
+line1
+line2
+This is a changed line of text.
+line4</code></pre>
+<h3 id="sed-y-转换脚本命令">sed y 转换脚本命令</h3>
+<p>y 转换命令是唯一可以处理单个字符的 sed 脚本命令。<code>[address]y/inchars/outchars/</code>转换命令会对 inchars 和 outchars 值进行一对一的映射，即 inchars 中的第一个字符会被转换为 outchars 中的第一个字符，第二个字符会被转换成 outchars 中的第二个字符…这个映射过程会一直持续到处理完指定字符。如果 inchars 和 outchars 的长度不同，则 sed 会产生一条错误消息。</p>
+<p>转换命令是一个全局命令，也就是说，它会文本行中找到的所有指定字符自动进行转换，而不会考虑它们出现的位置，我们无法限定只转换在特定地方出现的字符。</p>
+<p>例：</p>
+<pre class="shell"><code>$ echo &quot;This 1 is a test of 1 try.&quot; | sed &#39;y/123/456/&#39;
+This 4 is a test of 4 try</code></pre>
+<h3 id="sed-p-打印脚本命令">sed p 打印脚本命令</h3>
+<p>p 命令表示搜索符号条件的行，并输出该行的内容。</p>
+<pre class="shell"><code>$ # 打印包含匹配文本模式的行
+$ echo -e &quot;line1\nline2\nline3\nline4&quot; | sed -n &#39;/.*3$/p&#39;
+line3
+$ # 查找包含数字 3 的行，然后执行两条命令。首先，脚本用 p 命令来打印出原始行；然后它用 s 命令替换文本，并用 p 标记打印出替换结果。
+$ echo -e &quot;line1\nline2\nline3\nline4&quot; | sed -n &#39;/.*3$/{p;s/line/test/p}&#39;
+line3
+test3</code></pre>
+<h3 id="sed-r-脚本命令">sed r 脚本命令</h3>
+<p>r 命令用于将一个独立文件的数据插入到当前数据流的指定位置，<code>[address]r filename</code>会将 filename 文件中的内容插入到 address 指定行的后面。</p>
+<h3 id="sed-脚本命令的寻址方式">sed 脚本命令的寻址方式</h3>
+<p>默认情况下，sed 命令会作用于文本数据的所有行。如果只想将命令作用于特定行或某些行，则必须写明 address 部分，表示的方法有以下 2 种：</p>
+<ol type="1">
+<li>以数字形式指定行区间；如<code>echo -e "line1\nline2\nline3\nline4\nline5\nline6" | sed '2,4d'</code>。</li>
+<li>用文本模式指定具体行区间；如<code>echo -e "h1Helloh1\nh2Helloh2\nh3Helloh3" | sed '/h[0-9]/{s//\&lt;&amp;\&gt;/1;s//\&lt;&amp;\&gt;/2}'</code>。</li>
+</ol>
+<h2 id="awk">awk</h2>
+<h2 id="curl">curl</h2>
+<p><a href="http://www.codebelief.com/article/2017/05/linux-command-line-curl-usage/">curl</a></p>
+<p>不加任何选项使用 curl 时，默认会发送 GET 请求来获取链接内容到标准输出，使用 -d 则默认为发送 POST 请求，-X 可显示地指定发送数据的方式。其他选项如下：</p>
+<ol type="1">
+<li>-l 只显示 HTTP 头，而不显示文件内容（若要同时显示 HTTP 头和文件内容，使用 -i 选项）;</li>
+<li>-A 使用自定义 User-Agent 来对网页进行请求；</li>
+<li>-d 用于指定发送的数据，可用程序内嵌数据-d “somedata”，也可从文件中读取-d “<span class="citation" data-cites="data.txt">@data.txt</span>”，</li>
+</ol>
+<h2 id="requests">requests</h2>
+<p><a href="https://www.jianshu.com/p/d78982126318">requests</a></p>
+<p><code>requests.request(method,url,**kwargs)</code>：</p>
+<p><code>method</code>：新建Request对象要使用的HTTP方法，包括：GET，POST，PUT，DELETE等 <code>url</code>：新建Request对象的URL链接 <code>**kwargs</code>：13个控制访问的可选参数</p>
+<ul>
+<li>params：字典或字节序列，作为参数增加到url中</li>
+<li>data：字典、字节序列、文件，作为Request对象body的内容</li>
+<li>json：JSON格式的数据，作为Request对象body的内容</li>
+<li>headers：字典格式，HTTP请求头，作为Request对象Header的内容</li>
+<li>cookies：字典或CookieJar，Request中的cookie</li>
+<li>files：字典，形式为{filename: fileobject}，用于多文件上传</li>
+<li>auth：Auth 句柄或 (user, pass) 元组</li>
+<li>timeout：等待服务器数据的超时限制，是一个浮点数，或是一个(connect timeout, read timeout) 元组</li>
+<li>allow_redirects：True/False，默认为Ture，重定向开关,为True时表示允许POST/PUT/DELETE方法重定向</li>
+<li>proxies：字典类型，用于将协议映射为代理的URL</li>
+<li>verify：True/False，默认为True，认证SSL证书开关；为True时会验证SSL证书，也可以使用cert参数提供一个CA_BUNDLE路径；为False时，忽略SSL验证</li>
+<li>stream：True/False，默认为True，获取body立即下载开关，为False会立即下载响应头和响应体；为True时会先下载响应头，当Reponse调用content方法时才下载响应体</li>
+<li>cert：为字符串时应是 SSL 客户端证书文件的路径(.pem格式，文件路径包含密钥和证书)，如果是元组，就应该是一个(‘cert’, ‘key’) 二元值对</li>
+</ul>
+<h2 id="shell-中的括号">shell 中的括号</h2>
+<h3 id="var">${var}</h3>
+<p>限定变量名称范围</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/sh</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># test.sh</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="va">var</span><span class="op">=</span>test</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="va">${var}</span>12</span></code></pre></div>
+<p>效果如下</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ./test.sh</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> var12</span></code></pre></div>
+<h3 id="cmd">$(cmd)</h3>
+<p>命令替换</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/sh</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># test.sh</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="va">$(</span><span class="fu">ls</span><span class="va">)</span></span></code></pre></div>
+<p>运行效果与 <code>ls</code> 相同</p>
+<h3 id="或">{}或()</h3>
+<p>一串命令的执行</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> { echo 1<span class="kw">;</span><span class="bu">echo</span> <span class="st">&quot;A&quot;</span><span class="kw">;</span><span class="er">}</span> <span class="op">&gt;</span> tmp</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cat ./tmp</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> 1</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> A</span></code></pre></div>
+<h3 id="var-stringvarstringvarstringvarstring">${var:-string},${var:+string},${var:=string},${var:?string}</h3>
+<p>几种特殊的替换结构</p>
+<h4 id="var-string-若var为空则结果为string否则结果为var"><span class="math inline">\({var:-string} 若`var`为空，则结果为`&quot;string&quot;`，否则结果为`\)</span>var`。</h4>
+<h4 id="varstring-若var为空则结果为string并将该字符串赋给var否则结果为var"><span class="math inline">\({var:=string} 若`var`为空，则结果为`&quot;string&quot;`，并将该字符串赋给`var`，否则结果为`\)</span>var`。</h4>
+<h4 id="varstring-若var不为空则结果为string否则结果为var"><span class="math inline">\({var:+string} 若`var`不为空，则结果为`&quot;string&quot;`，否则结果为`\)</span>var`。</h4>
+<h4 id="varstring-若var不为空则结果为var否则将string输出到标准错误中并从脚本退出"><span class="math inline">\({var:?string} 若`var`不为空，则结果为`\)</span>var<code>，否则将</code>“string”`输出到标准错误中，并从脚本退出。</h4>
+<h3 id="exp">$((exp))</h3>
+<p>POSIX标准的扩展计算，只要符合C的运算符都可用在$((exp))，甚至是三目运算符。</p>
+<h3 id="varpatternvarpatternvarpatternvarpattern">${var%pattern},${var%%pattern},${var#pattern},${var##pattern}</h3>
+<p>四种模式匹配替换结构</p>
+<h3 id="或-1">[]或[[]]</h3>
+<p>类似test</p>
+<h3 id="section">()</h3>
+<p>在子shell中运行</p>
+<h3 id="section-1"></h3>
+<p>{1..30} 就是1-30，或者是/{,s}bin/表示/bin/和/sbin/，ab{c,d,e}表示abc、abd、abe</p>
+<blockquote>
+<p><a href="http://www.jb51.net/article/60326.htm">reference</a></p>
+</blockquote>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

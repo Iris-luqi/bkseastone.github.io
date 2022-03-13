@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:34Z" />
+  <title>深度学习:文本检测</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">深度学习:文本检测</h1>
+</header>
+<p>文字检测主要有两大困难：密集文本行和长文本。已有的应对方法如下：</p>
+<ul>
+<li>密集文本行：
+<ul>
+<li>将文本边界设为第三类；</li>
+<li>对文本框GT做pre-process（shrink）；</li>
+<li>textMountain;</li>
+</ul></li>
+<li>长文本：
+<ul>
+<li>用post-process的方法使得长文本可以化为多个等宽的短文本，从而只预测文本的高度（<a href="https://github.com/eragonruan/text-detection-ctpn">CTPN</a>）；</li>
+<li>（<a href="https://github.com/huoyijie/AdvancedEAST">Advanced-EAST</a>）</li>
+</ul></li>
+</ul>
+<p>文字检测主要两大类方法：anchor-based和pixel-based。</p>
+<ul>
+<li>anchor-based数据成本低，但很依赖anchor的精心设计，需尽可能的覆盖所有的文本尺度。</li>
+<li>pixel-based对小目标分割具有一定的优势，对于长文本（direct regression）或者较大文本（link regression）容易出现检测不全或者丢失的情况。</li>
+</ul>
+<figure>
+<img src="https://img.vim-cn.com/1c/04fb88ae9bf6b3d46fa774225cdcd8cdbdf636.webp" alt="regression method" /><figcaption aria-hidden="true">regression method</figcaption>
+</figure>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

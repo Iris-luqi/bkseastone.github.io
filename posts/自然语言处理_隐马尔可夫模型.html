@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:35Z" />
+  <title>自然语言处理——隐马尔可夫模型</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">自然语言处理——隐马尔可夫模型</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#前言">前言</a></li>
+<li><a href="#隐马尔可夫模型hmm">隐马尔可夫模型（HMM）</a></li>
+</ul>
+</nav>
+<h2 id="前言">前言</h2>
+<h3 id="词性part-of-speech">词性（Part-of-Speech）</h3>
+<p>POS 是依据语法功能划分，是词语在区别词类时用到的属性。</p>
+<h3 id="词性标注的方法">词性标注的方法</h3>
+<ol type="1">
+<li><p>rule-based</p>
+<p>语言专家根据词法及语言学知识编制的规则。</p></li>
+<li><p>learning-based</p>
+<p>从专家标注的语料库中学习到用于自动标注的模型</p>
+<ul>
+<li>统计模型：隐马尔可夫模型（HMM），条件随机域模型（CRF），神经网络模型（NN）</li>
+<li>规则学习：基于转换的学习（TBL）</li>
+</ul></li>
+</ol>
+<h3 id="符号规定">符号规定</h3>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: center;">符号</th>
+<th style="text-align: left;">含义</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(N\)</span></td>
+<td style="text-align: left;">训练数据中的句子总数</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(O_i\)</span></td>
+<td style="text-align: left;">第 i 个句子（词序列）</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(o_i\)</span></td>
+<td style="text-align: left;">某句子中的第 i 个词</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(Q_i\)</span></td>
+<td style="text-align: left;">第 i 个句子对应的词性标注（词性序列）</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(q_i\)</span></td>
+<td style="text-align: left;">某句子中的第 i 个词对应的词性</td>
+</tr>
+</tbody>
+</table>
+<h3 id="基于统计语言模型的词性标注基本模型">基于统计语言模型的词性标注基本模型</h3>
+<p><span class="math display">\[
+\max_Q P(Q|O)
+\]</span></p>
+<p>由于语料库不可能包含所有可能出现的句子，故应得到一个更加宽泛的的表达式。利用贝叶斯法则得等价模型 <span class="math display">\[
+\max_Q P(O|Q)P(Q)
+\]</span></p>
+<h2 id="隐马尔可夫模型hmm">隐马尔可夫模型（HMM）</h2>
+<h3 id="假设">假设</h3>
+<ol type="1">
+<li>一阶马尔可夫假设，即语义相关性只涉及到前面 1 个词（也可设为 2 阶或 3 阶）：<span class="math inline">\(P(Q) = P(q_1)P(q_2|q_1)...P(q_N|q_{N-1})\)</span>；</li>
+<li>观测独立性假设，当前时刻的观测值仅与当前时刻的不可观测量的值（状态值）有关，与其他时刻的观测值无关；即单词<span class="math inline">\(o_i\)</span>对应的<span class="math inline">\(q_i\)</span>不受其他单词影响，即<span class="math inline">\(P(o_i|q_i)\)</span>相互独立：<span class="math inline">\(P(O|Q)=\prod P(o_i|q_i)\)</span>，故在该模型中，观测独立性假设也可称为条件独立性假设。注意状态之间独立性并不成立，</li>
+</ol>
+<h3 id="模型">模型</h3>
+<p><span class="math display">\[
+\max_Q \prod P(o_i|q_i) * \prod P(q_j|q_{j-1}),
+\]</span></p>
+<p>其中<span class="math inline">\(P(o_i|q_i)\)</span>被称为发射概率，是通过统计每个单词在语料库中的出现情况得到的。对于因某个单词没有在语料库中出现导致发射概率为 0 进而导致整个句子出现概率为 0 的情况，须做一些平滑处理。</p>
+<h3 id="求解">求解</h3>
+<h4 id="由模型定义求解暴力遍历">由模型定义求解（暴力遍历）</h4>
+<p>对于给定的观测序列，求所有可能状态序列的概率，并将最大概率的状态序列最为所求结果。设观测序列长度为 T ，可选状态数为 M，可选观测数为 N，首先在最一开始时由初始状态概率向量 <span class="math inline">\(\pi\)</span>求出后续 T-1 个状态概率向量<span class="math inline">\(i_t = \pi A^{t-1}\)</span> ，那么一个可能状态序列的概率为，对一个句子的词性标注的时间复杂度为。</p>
+<h3 id="总结">总结</h3>
+<p>使用离散时间点、离散状态，并做了马尔可夫假设，由此系统产生了马尔可夫过程的模式，它包含一个<span class="math inline">\(\pi\)</span>向量和一个状态转移矩阵。</p>
+<p>隐马尔科夫模型是在一个标准的马尔科夫过程中引入一组观察状态，以及该组观察状态与隐藏状态间的概率关系。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:33Z" />
+  <title>推荐系统:排序</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">推荐系统:排序</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#背景">背景</a></li>
+<li><a href="#求解器">求解器</a></li>
+<li><a href="#模型">模型</a></li>
+<li><a href="#任务类型">任务类型</a></li>
+</ul>
+</nav>
+<h2 id="背景">背景</h2>
+<p>推荐系统排序。</p>
+<h2 id="求解器">求解器</h2>
+<h3 id="ftrl">FTRL</h3>
+<p>https://www.cnblogs.com/EE-NovRain/p/3810737.html</p>
+<p>https://github.com/alexeygrigorev/libftrl-python</p>
+<h2 id="模型">模型</h2>
+<p>常用的排序算法框架有pointwise、pairwise、listwise三类。pointwise学习单个样本，如果最终预测目标是一个实数值，就是回归问题，如果目标是概率预测，就是一个分类问题，例如CTR预估。pairwise和listwise分别学习一对有序对和一个有序序列的样本特征，考虑得更加精细。在推荐系统中常用pointwise方法来做排序。</p>
+<h3 id="lr">LR</h3>
+<p>对数几率回归（逻辑回归）模型。</p>
+<p>Google在2013年推广的FTRL、阿里推广的分片线性模型。</p>
+<h3 id="gbdt">GBDT</h3>
+<p>GBDT作为特征抽取器，利用GBDT构造的新特征来训练LR模型。</p>
+<h3 id="fm">FM</h3>
+<h4 id="fm-1">FM</h4>
+<h4 id="ffm">FFM</h4>
+<h4 id="deep-fm">Deep FM</h4>
+<p>用FM替换掉了原来的Wide部分，加强了浅层网络部分特征组合的能力。</p>
+<h4 id="fnn">FNN</h4>
+<p>使用FM的隐层向量作为user和item的Embedding，从而避免了完全从随机状态训练Embedding。</p>
+<h4 id="nfm">NFM</h4>
+<p>如果我们从深度学习网络架构的角度看待FM，FM也可以看作是由单层LR与二阶特征交叉组成的Wide&amp;Deep的架构，与经典W&amp;D的不同之处仅在于Deep部分变成了二阶隐向量相乘的形式。</p>
+<p>NFM从修改FM二阶部分的角度出发，用一个带Bi-interaction Pooling层的DNN替换了FM的特征交叉部分，形成了独特的Wide&amp;Deep架构。其中Bi-interaction Pooling可以看作是不同特征embedding的element-wise product的形式。</p>
+<h4 id="afm看下这篇应该对理解fm有帮助">AFM（看下这篇，应该对理解FM有帮助）</h4>
+<p>AFM顾名思义，就是引入Attention机制的FM，具体到模型结构上，AFM其实是对FM的二阶部分的每个交叉特征赋予了权重，这个权重控制了交叉特征对最后结果的影响，使FM获得根据样本特点调整特征权重的能力。</p>
+<p><img src="/Users/wangweisong/Library/Application Support/typora-user-images/image-20210817195930859.png" alt="image-20210817195930859" style="zoom:50%;" /></p>
+<h3 id="dnn">DNN</h3>
+<h4 id="dssm">DSSM</h4>
+<p>即simnet。</p>
+<h4 id="deep-crossing作为ctr预估的base模型可以看下">Deep Crossing（作为ctr预估的base模型，可以看下）</h4>
+<p>Embedding层将稀疏特征转化为低维稠密特征，用stacking layer将分段的特征向量连接起来，再通过多层神经网络（残差网络块）完成特征的组合、转换，最终用scoring layer完成CTR的计算。</p>
+<h4 id="pnn没看懂这个咋实现的强化模型能够针对性的特征交叉">PNN（没看懂，这个咋实现的强化模型能够针对性的特征交叉）</h4>
+<p>通过加入Product layer实现针对性的特征交叉。</p>
+<h4 id="widedeep">wide&amp;deep</h4>
+<p>Wide部分的主要作用是让模型具有记忆性（Memorization），单层的Wide部分善于处理大量稀疏的id类特征，便于让模型直接“记住”用户的大量历史信息；Deep部分的主要作用是让模型具有“泛化性”（Generalization），利用DNN表达能力强的特点，挖掘藏在特征后面的数据模式。最终利用LR输出层将Wide部分和Deep部分组合起来，形成统一的模型。</p>
+<h4 id="deepcross-networkdcn">Deep&amp;Cross Network（DCN）</h4>
+<p>使用Cross网络替代了原来的Wide部分。其中设计Cross网络的基本动机是为了增加特征之间的交互力度，使用多层cross layer对输入向量进行特征交叉。单层cross layer的基本操作是将cross layer的输入向量xl与原始的输入向量x0进行交叉，并加入bias向量和原始xl输入向量。</p>
+<h4 id="din">DIN</h4>
+<p>在模型的embedding layer和concatenate layer之间加入了attention unit，使模型能够根据候选item的不同，调整不同user特征的权重。</p>
+<h4 id="dien">DIEN</h4>
+<p>通过引入序列模型 AUGRU模拟了用户兴趣进化的过程。具体来讲模型的主要特点是在Embedding layer和Concatenate layer之间加入了生成兴趣的Interest Extractor Layer和模拟兴趣演化的Interest Evolving layer。</p>
+<p>其中Interest Extractor Layer使用了DIN的结构抽取了每一个时间片内用户的兴趣，Interest Evolving layer则利用序列模型AUGRU的结构将不同时间的用户兴趣串联起来，形成兴趣进化的链条。最终再把当前时刻的“兴趣向量”输入上层的多层全连接网络，与其他特征一起进行最终的CTR预估。</p>
+<h2 id="任务类型">任务类型</h2>
+<h3 id="单目标排序">单目标排序</h3>
+<p>学点击，时长，消费，点赞，评论，分享等。</p>
+<h3 id="多目标排序">多目标排序</h3>
+<p>比如我们以完成率建模，短视频的完成率天生就要比长视频要高；作者会想办法发各种骗完成率的视频，类似列表页产品形态中的标题党，比如，猜谜类视频等。这些问题反映了单指标建模的脆弱性，所以，多目标建模的鲁棒性就由此凸显出来了。</p>
+<p>而多目标建模中难点在于如何平衡多个建模目标之间的关系，目前的通用做法是将多个q加权或连乘，比如Prob(click) * watch_time，也就是人工的去制定规则，这种方式可以快速见效、简单、快捷，而且便于理解。但⼀个很致命的问题是，人工规则没办法挑选出最优的解。其次，当其中的⼀个因⼦发生变化时，比如值域发生变化，就会导致整体的公式失效。如何系统的去解决这两个问题，是多目标建模中的重点和难点。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

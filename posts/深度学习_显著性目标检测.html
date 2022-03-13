@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:35Z" />
+  <title>深度学习:显著性目标检测</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">深度学习:显著性目标检测</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#canny"><span>canny</span></a></li>
+<li><a href="#saliency-detection-via-graph-based-manifold-ranking"><span>Saliency Detection via Graph-Based Manifold Ranking</span></a></li>
+<li><a href="#densecrf">DenseCRF</a></li>
+<li><a href="#hedholistically-nested-edge-detection"><span>HED（Holistically-Nested Edge Detection）</span></a></li>
+<li><a href="#dssdeeply-supervised-salient-object-detection-with-short-connections">DSS（Deeply Supervised Salient Object Detection with Short Connections）</a></li>
+<li><a href="#pfapyramid-feature-attention-network-for-saliency-detection"><span>PFA（Pyramid Feature Attention Network for Saliency detection）</span></a></li>
+</ul>
+</nav>
+<h2 id="canny"><a href="https://www.cnblogs.com/techyan1990/p/7291771.html">canny</a></h2>
+<h2 id="saliency-detection-via-graph-based-manifold-ranking"><a href="https://www.cnblogs.com/Peijialun/p/9563492.html">Saliency Detection via Graph-Based Manifold Ranking</a></h2>
+<h2 id="densecrf">DenseCRF</h2>
+<h2 id="hedholistically-nested-edge-detection"><a href="https://blog.csdn.net/beyondjv610/article/details/80992770">HED（Holistically-Nested Edge Detection）</a></h2>
+<p><strong>多尺度的结构对比</strong></p>
+<ol type="1">
+<li>multi-stream: 如inception，每个网络通过不同参数与receptive field大小的不同，获得多尺度的结果。</li>
+<li>skip-layer net: 如resnet、densenet，跳层连接使得浅层的小尺度与深层的大尺度结合，获得多尺度的特征。</li>
+<li>single model on multi-scale inputs: 单一网络，图像resize方法得到多尺度进行输入，在训练和测试时加入，提高模型对多尺度的泛化能力。</li>
+<li>training independent networks: 从1演化来，通过多个不同深度的独立网络分别对不同尺度进行预测。</li>
+<li>holistically-nested networks: 从4演化来，类似地是一个相互独立多网络多尺度预测系统，但是将multiple side outputs组合成一个单一深度网络。</li>
+</ol>
+<p>1是横向的，2是纵向的，3是trick，4是用上了集成学习以提高多尺度的拟合能力，5是结合具体任务（<strong>边缘检测</strong>通过多个回归预测得到结合的边缘图往往比使用一个输出的loss函数进行单一的回归预测效果更好）的改进。</p>
+<h2 id="dssdeeply-supervised-salient-object-detection-with-short-connections">DSS（Deeply Supervised Salient Object Detection with Short Connections）</h2>
+<figure>
+<img src="https://img.vim-cn.com/47/36f78768a9a4072ebd434b73c419e5b76169a3.jpg" alt="DSS" /><figcaption aria-hidden="true">DSS</figcaption>
+</figure>
+<figure>
+<img src="https://img.vim-cn.com/54/32b5438b8345e7a42fdc3b176d0272af850e49.jpg" alt="DSS_structure" /><figcaption aria-hidden="true">DSS_structure</figcaption>
+</figure>
+<h2 id="pfapyramid-feature-attention-network-for-saliency-detection"><a href="%5Bhttps://github.com/lartpang/Machine-Deep-Learning/blob/e1f9a9fa7843f80350b22ae27e7136d2a9bfe80d/%E5%9B%BE%E5%83%8F%E5%88%86%E5%89%B2/Pyramid%20Feature%20Attention%20Network%20for%20Saliency%20detection(2018)%E6%80%BB%E7%BB%93.md%5D(https://github.com/lartpang/Machine-Deep-Learning/blob/e1f9a9fa7843f80350b22ae27e7136d2a9bfe80d/图像分割/Pyramid%20Feature%20Attention%20Network%20for%20Saliency%20detection(2018)总结.md)">PFA（Pyramid Feature Attention Network for Saliency detection）</a></h2>
+<p>深层的特征通常包含全局上下文感知信息，这些信息适合于正确定位显著区域。 浅层的特征包含空间结构细节，适合于定位边界。这些方法的缺点是，融合不同尺度的特征但是并未考虑到每一层不同的贡献。对高级语义特征和低维空间结构特征做attention，以实现在显著性检测中的更有效的特征提取。</p>
+<h3 id="上下文感知金字塔特征提取context-aware-pyramidfeatureextraction">上下文感知金字塔特征提取（Context-aware PyramidFeatureExtraction）</h3>
+<h4 id="空洞卷积空间池化金字塔atrous-spatial-pyramid-pooling"><a href="https://blog.csdn.net/u011974639/article/details/79138653">空洞卷积空间池化金字塔（Atrous Spatial Pyramid Pooling）</a></h4>
+<p>ASPP：一个类似于<a href="https://blog.csdn.net/u011974639/article/details/78053203#sppnet">SPP</a>的结构，在给定的输入上以不同采样率的空洞卷积并行采样，相当于以多个比例捕捉图像的上下文，以应对多个尺度上存在对象的问题。</p>
+<h4 id="cpef">CPEF</h4>
+<figure>
+<img src="https://img.vim-cn.com/83/8b9a607a5749dbc55f8d46629bac267b872d97.png" alt="CPEF" /><figcaption aria-hidden="true">CPEF</figcaption>
+</figure>
+<p>将通过CFE后得到的特征图concat到一起，通过1x1卷积降维获得三种不同比例的特征，然后将两个较小的特征上采样到最大的一个，最终提取到具有尺度和形状不变性的特征。</p>
+<h3 id="注意力机制">注意力机制</h3>
+<p>由于不同级别有不同特征，采用高级特征的<strong>通道注意力</strong>和低级特征的<strong>空间注意力</strong>，以便选择有效功能。另外，不对高级特征使用空间注意力，因为高级特征包含高抽象语义，不需要过滤空间信息。低级特征也不使用通道注意机制，因为低级特征的不同通道之间几乎没有语义差异。</p>
+<h4 id="ca">CA</h4>
+<figure>
+<img src="https://img.vim-cn.com/da/f0c8f1c8cb1b5b86472cf2c522ef8f45913078.jpg" alt="senet" /><figcaption aria-hidden="true">senet</figcaption>
+</figure>
+<p>同<a href="https://blog.csdn.net/wfei101/article/details/79672944">SENet</a>。其中称全局池化为 squeeze 操作，从而实现获得全局感受野的能力，每一个通道上的特征图均池化为一个实数；称两个 FC 加 sigmoid 操作为 excitation 操作，通过两个全连接层来为特征通道间的相关性显示地建模；最后的 scale 为 reweight 操作，即完成在通道维度上的对原始特征的重标定。</p>
+<h4 id="sa">SA</h4>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:33Z" />
+  <title>图像处理:基础</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">图像处理:基础</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#直方图histogram">直方图histogram</a></li>
+</ul>
+</nav>
+<h2 id="直方图histogram">直方图histogram</h2>
+<h3 id="histogram">histogram</h3>
+<p>histogram的x轴是像素值（如0到255）y轴是对应的像素数量，通过histogram可以得到灰度、色调、饱和度、明度等特征的密度分布，具体由通道属性决定。可通过BIN的方法来<a href="https://www.jianshu.com/p/c3f414646a50">实现</a>压缩任一特征的维度。</p>
+<h3 id="均衡">均衡</h3>
+<p>一个好的图片应该是有所有范围的像素，所以我们需要把一张像素值被限制在一个特定值范围内的图像的histogram拉伸到两端，这就是histogram均衡。这个一般是用来提升图片的对比度。</p>
+<h3 id="特征">特征</h3>
+<p><a href="https://www.jianshu.com/p/2f3fcabad43a">HSV</a>(Hue, Saturation, Value)，</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

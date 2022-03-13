@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:32Z" />
+  <title>python:基础</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">python:基础</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#引入">引入</a></li>
+<li><a href="#粘合剂">粘合剂</a></li>
+</ul>
+</nav>
+<h2 id="引入">引入</h2>
+<p>python 是一种 dynamically-typed language，以牺牲类型安全性（在 compile time 无法做类型检查，只有在 run time 才能去确定对象的类型）为代价，换来了编码上的灵活性（可以不用声明直接用——<a href="https://en.wikipedia.org/wiki/Duck_typing">duck typing</a> ）</p>
+<h3 id="名字空间">名字空间</h3>
+<p>当一行代码要使用变量 <code>x</code> 的值时，Python会到所有可用的名字空间去查找变量，按照如下顺序：</p>
+<ol type="1">
+<li>局部名字空间 - 特指当前函数或类的方法。如果函数定义了一个局部变量 <code>x</code>，Python将使用这个变量，然后停止搜索。</li>
+<li>全局名字空间 - 特指当前的模块。如果模块定义了一个名为 <code>x</code> 的变量，函数或类，Python将使用这个变量然后停止搜索。</li>
+<li>内置名字空间 - 对每个模块都是全局的。作为最后的尝试，Python将假设 <code>x</code> 是内置函数或变量。</li>
+</ol>
+<p>Python使用名字空间来记录变量的轨迹。名字空间是一个 字典，它的键就是变量名，字典的值就是那些变量的值。局部名字空间可以通过内置的 <code>locals()</code> 函数来访问。全局（模块级别，包括内置名字空间）名字空间可以通过 <code>globals()</code> 函数来访问。</p>
+<h3 id="模块">模块</h3>
+<ol type="1">
+<li><p><a href="https://www.cnblogs.com/wxlog/p/10566628.html">python中模块的<code>__all__</code></a>：<code>__all__</code>为一元组，每一个元素为一字符串，为该模块中的变量、方法、类，当模块为一单一py文件时可定义于模块内部，当模块为一文件夹时，可定义于*__init__.py*文件中。</p>
+<ul>
+<li>其功能类似于c中的头文件，起显示声明权限作用，具体为被导入模块若定义了<code>__all__</code>属性，则只有<code>__all__</code>内指定的属性、方法、类可被导入，若没定义，则导入模块内的所有公有属性，方法和类。</li>
+</ul></li>
+</ol>
+<ul>
+<li>有隐式声明权限的默认方式，以单下划线开头为protected，以双下划线开头为private，<code>from pak import *</code>的方法无法导入，但当<code>import pak</code>时，仍可使用<code>pak._func</code>和<code>pak.__func</code>直接访问。</li>
+</ul>
+<ol start="2" type="1">
+<li></li>
+</ol>
+<h2 id="粘合剂">粘合剂</h2>
+<h3 id="linux-bash-cmd">linux bash cmd</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>cmdline <span class="op">=</span> <span class="st">&quot;echo test, test, test, OK!&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(os.popen(cmdline).read())</span></code></pre></div>
+<h3 id="c">c++</h3>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

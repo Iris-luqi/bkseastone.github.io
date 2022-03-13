@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:34Z" />
+  <title>机器学习:强化学习</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">机器学习:强化学习</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#基础">基础</a>
+<ul>
+<li><a href="#q-learning">Q-learning</a></li>
+<li><a href="#deep-q-learning">Deep Q-learning</a></li>
+<li><a href="#policy-gradient">Policy Gradient</a></li>
+</ul></li>
+<li><a href="#在目标检测中的应用">在目标检测中的应用</a>
+<ul>
+<li><a href="#rpn">RPN</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="基础">基础</h1>
+<h2 id="q-learning">Q-learning</h2>
+<blockquote>
+<p>关键：将（采取动作后的新状态下的最大Q值 + 采取该行动后得到的奖励）作为原状态下对应行动的Q值的目标值。</p>
+</blockquote>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: center;">notation</th>
+<th style="text-align: left;">含义</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">s</td>
+<td style="text-align: left;">当前状态</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">s_</td>
+<td style="text-align: left;">采取动作后的新状态</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">a</td>
+<td style="text-align: left;">动作</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Q表</td>
+<td style="text-align: left;">在各个状态s下采取各个动作a得到的Q值组成的表</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Q(s0, a0)</td>
+<td style="text-align: left;">在状态s0下采取动作a0得到的Q值</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Q(s0)</td>
+<td style="text-align: left;">在状态s0下采取某个动作a所能得到的最大Q值</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">r</td>
+<td style="text-align: left;">奖励，通过设置不同状态对应不同奖励从而求得任务所需的Q表</td>
+</tr>
+</tbody>
+</table>
+<p>Q表更新（学习）规则： <span class="math display">\[
+Q_{s_0, a_0} = Q_{s_0, a_0} + \alpha [(r_{s_1} + \gamma Q_{s_1}) - Q_{s_0, a_0}]
+\]</span> 其中 <span class="math inline">\(\gamma\)</span> 为未来奖励的衰减率，<span class="math inline">\(\alpha\)</span> 为学习率，对其做递归展开得（设 <span class="math inline">\(\alpha = 1\)</span> ）： <span class="math display">\[
+\begin{align*}
+Q_{s_0, a_0} &amp;= Q_{s_0}  \\
+&amp;= r_{s_1} + \gamma Q_{s_1} \\
+&amp;= r_{s_1} + \gamma (r_{s_2} + \gamma Q_{s_2}) \\
+&amp;= r_{s_1} + \gamma r_{s_2} + \gamma^2 r_{s_3} + \dotso
+\end{align*}
+\]</span></p>
+<p>故 <span class="math inline">\(\gamma\)</span> 越大，对未来考虑越多。</p>
+<p>详见<a href="https://github.com/bkseastone/Amadeus/blob/master/RL/Q_learning/treasure_on_right.py">demo(treasure_on_right)</a> 。</p>
+<h2 id="deep-q-learning">Deep Q-learning</h2>
+<blockquote>
+<p>用神经网络来实现Q表的功能，解决状态取值为连续区间的问题（Q表允许的状态取值为离散值）。</p>
+</blockquote>
+<figure>
+<img src="https://img.vim-cn.com/f5/f44f6609332cfae2740526d30c841d8069475f.png" alt="demo_DQN" /><figcaption aria-hidden="true">demo_DQN</figcaption>
+</figure>
+<p>训练细节：</p>
+<ul>
+<li>batchsize = 32，于 200 个 batch 后做 target_replace_op，以保证收敛</li>
+<li>每 5 步做一次学习，大前提是已做了至少 200 步的仿真（记忆库最大容量设为 2000，每个 batch 是从记忆库中随机挑选的）</li>
+</ul>
+<p>详见<a href="https://github.com/bkseastone/Amadeus/blob/master/RL/Q_learning/run.py">demo(DQN/run)</a> 。</p>
+<h2 id="policy-gradient">Policy Gradient</h2>
+<blockquote>
+<p>DQN 状态可以达到无限，但因输出的是已设定的各个动作的Q值（概率），故动作数量依然是有限的（有几个输出神经元便是所能采取的动作数量）；通过直接输出动作的值而不是某个动作的概率的方法，可使得输出动作达到无限，这种方法称为 Policy Gradient 。</p>
+</blockquote>
+<figure>
+<img src="https://img.vim-cn.com/89/07d84c0c31ad34e5af7d388d1186dbb9aded5e.png" alt="demo_policy-gradient" /><figcaption aria-hidden="true">demo_policy-gradient</figcaption>
+</figure>
+<p>因为没有误差，只用奖励做参数更新，故只能回合更新： <span class="math display">\[
+vt[t] = vt[t] * 0.99 + ep_rs[t], \quad (t 为倒序).
+\]</span> 详见<a href="https://github.com/bkseastone/Amadeus/blob/master/RL/PolicyGradients/demo.py">demo(RL_brain/demo)</a> 。</p>
+<h1 id="在目标检测中的应用">在目标检测中的应用</h1>
+<h2 id="rpn">RPN</h2>
+<h3 id="deep-reinforcement-learning-of-region-proposal-networks-for-object-detection">Deep Reinforcement Learning of Region Proposal Networks for Object Detection</h3>
+<p>详见 <a href="https://github.com/bkseastone/archived/blob/master/Deep%20Reinforcement%20Learning%20of%20Region%20Proposal%20Networks%20for%20Object%20Detection.pdf">pdf</a> ，<a href="https://github.com/aleksispi/drl-rpn-tf">source</a> 。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

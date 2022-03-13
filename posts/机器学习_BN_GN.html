@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:33Z" />
+  <title>机器学习:BN/GN</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">机器学习:BN/GN</h1>
+</header>
+<p>经过 BN 层后，使得输出的均值与方差不再与前面的网络参数有复杂的关联依赖，而只由 BN 层的参数 <span class="math inline">\(\beta , \gamma\)</span> 决定，故前面的网络参数是否学好并不影响后面 BN 层参数 <span class="math inline">\(\beta , \gamma\)</span> 的学习，若前面的网络参数尚未学好，已经学好的 BN 层参数 <span class="math inline">\(\beta , \gamma\)</span> 的存在，会使得最近一层的网络参数更快地朝好的方向发展，进而一步步反传使得所有网络参数达到最优，而不必费心地去考虑网络参数如何初始化最好。</p>
+<p>BN 层使得应处于激活函数饱和区的神经元处于饱和区，应处于激活区的神经元处于激活区，即无论网络参数如何，BN 层仍可使得信号进行有效的传播，结合对参数的正则化，学习到的权重便不会过高或过低，从而从根本上解决了因 w 的大小而导致的梯度爆炸或消失问题。</p>
+<p>容许较高学习率的原因：</p>
+<p>对于通用格式 conv + BN + ReLU 中的 conv 层不加 bias 是因为 BN 已有 bias 功能？：</p>
+<p>faster-rcnn 中的 BN 怎么操作的？：</p>
+<figure>
+<img src="http://5b0988e595225.cdn.sohucs.com/images/20180324/9b68914ff7da4d14af334668d858a46f.jpeg" alt="BN" /><figcaption aria-hidden="true">BN</figcaption>
+</figure>
+<p>减了对初始化参数的依赖，那么迁移学习的必要性：？</p>
+<p>https://docs.google.com/presentation/d/18MiZndRCOxB7g-TcCl2EZOElS5udVaCuxnGznLnmOlE/pub?slide=id.g963e5b4287fb24d_5</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

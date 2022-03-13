@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:35Z" />
+  <title>自然语言处理:基础</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">自然语言处理:基础</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#术语">术语</a></li>
+<li><a href="#切词">切词</a></li>
+<li><a href="#统计语言模型">统计语言模型</a></li>
+<li><a href="#词符表示">词符表示</a></li>
+<li><a href="#baidu-nlp-学习">BAIDU-NLP 学习</a></li>
+</ul>
+</nav>
+<p><img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/nlp/nlp_development.png" alt="nlp_development" style="zoom:20%;" /></p>
+<h2 id="术语">术语</h2>
+<h3 id="basic">basic</h3>
+<ul>
+<li>词典（词表）：目标语言的所有单词，记为<span class="math inline">\(\mathcal{D}\)</span>。</li>
+<li>语料库（Corpus）：即手中的数据集，记为<span class="math inline">\(\mathcal{C}\)</span>。</li>
+<li>上下文（context）：词汇所处的共现词、语境、前邻词、后邻词等词汇出现的篇章语境信息。</li>
+<li>词符 / 词元（tocken）：目标语言中一个词的标记，即指一个单词。</li>
+<li>词串：一系列词符前后连接成串。</li>
+<li>词串共现：两个词串在同一个句子中。</li>
+<li>历史词：出现在该词符之前的所有词。</li>
+</ul>
+<h3 id="自监督学习">自监督学习</h3>
+<p><img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/self-supervised learning.png" alt="self-supervised learning" style="zoom: 50%;" /></p>
+<h3 id="困惑度">困惑度</h3>
+<h2 id="切词">切词</h2>
+<blockquote>
+<p>tockenization / segmentation：</p>
+<p>基于词表的切词算法：正向最大匹配法、反向最大匹配法、双向最大匹配算法等。</p>
+<p>基于统计模型的切词算法：n-gram模型的切词算法、HMM模型切词算法等。</p>
+<p>基于序列标注模型的切词算法：基于CRF的切词算法、基于深度学习的端到端的切词算法等。</p>
+<p><a href="http://59.108.48.5/course/mining/12-13spring/%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE/02-01%E6%B1%89%E8%AF%AD%E8%87%AA%E5%8A%A8%E5%88%86%E8%AF%8D%E7%A0%94%E7%A9%B6%E8%AF%84%E8%BF%B0.pdf">汉语自动切词研究评述</a></p>
+</blockquote>
+<h3 id="一句话介绍切词原理与算法">一句话介绍切词原理与算法</h3>
+<h4 id="基于词表的切词">基于词表的切词</h4>
+<p><strong>正向最大匹配</strong>：</p>
+<ul>
+<li>单词的颗粒度越大，所能表示的含义越确切。</li>
+<li>贪婪算法，从左到右尽可能划分出一段连续字符。</li>
+</ul>
+<p><strong>反向最大匹配</strong>：</p>
+<ul>
+<li>因为中文的复杂性和特殊性，反向最大匹配大多时候往往会比正向要准确。</li>
+<li>跟正向最大匹配的唯一不同是从右到左尽可能划分出一段连续字符。</li>
+</ul>
+<p><strong>双向最大匹配</strong>：</p>
+<ul>
+<li>加入切词原则的模型融合。</li>
+<li>从正向最大匹配法和反向最大匹配法的结果中选择最满足中文切词原则的一个切词结果。</li>
+</ul>
+<h4 id="基于词的语言模型的切词">基于词的语言模型的切词</h4>
+<p><strong>n-gram的切词算法</strong>：</p>
+<ul>
+<li>引入了马尔科夫假设，一个词的出现仅仅依赖于它前面出现的有限的一个或者几个词。</li>
+<li>寻找所有可能的切词结果中概率最大。基于词典构建有向无环图，使用 log 函数将求解相乘问题转换成相加问题，使用倒数函数将求解最大问题变成求解最小问题，由此转为最短路径问题；即n-gram+DAG。（若将每条边的权值均设成1，那么该结果为切词词数最少的结果）</li>
+<li><a href="https://www.cnblogs.com/zhbzz2007/p/6084196.html">jieba分词</a>的基础模式采用该算法。</li>
+</ul>
+<p><strong>Byte-Pair-Encoding</strong></p>
+<p>BPE的两种编码方式：一种是源语言词汇和目标语言词汇分别编码，另一种是双语词汇联合编码。前者的优势是让词表和文本的表示更紧凑，后者则可以尽可能保证原文和译文的子词切分方式统一。从实验结果来看，在音译或简单复制较多的情形下（比如英德）翻译，联合编码的效果更佳。</p>
+<p>通过subword来表示开放词表，以解决OOV和罕见词的问题。</p>
+<h4 id="基于字的序列标注模型的切词">基于字的序列标注模型的切词</h4>
+<p><strong>HMM模型切词</strong>：</p>
+<ul>
+<li></li>
+<li>基于BMES标记体系的训练数据，统计出 HMM 的两个参数表，由此利用 Viterbi 算法解码出隐藏状态序列，按照隐藏状态序列可将字符串分割成词语。</li>
+</ul>
+<p><strong>基于CRF的切词</strong>：</p>
+<figure>
+<img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/nlp/crf.png" alt="image-20201015142058969" /><figcaption aria-hidden="true">image-20201015142058969</figcaption>
+</figure>
+<ul>
+<li></li>
+<li></li>
+</ul>
+<p><strong>基于深度学习的端到端的切词</strong>：</p>
+<ul>
+<li>线性链crf的基础上，用bilstm模型计算发射概率。</li>
+<li></li>
+</ul>
+<h3 id="中文切词原则">中文切词原则</h3>
+<ol type="1">
+<li>切词的结果颗粒度（单个词所包含的字符长度）越大越好。</li>
+<li>最小化 OOV 和单字。</li>
+<li>最小化词语长度方差。</li>
+</ol>
+<h2 id="统计语言模型">统计语言模型</h2>
+<blockquote>
+<p>统计语言模型（statistical language model）目标是得到一个能够计算一个词串的联合概率的函数。作用是检测一句话是正常人说出来的概率是多少。词向量是训练语言模型过程中的『意外之物』。</p>
+</blockquote>
+<p>统计语言模型是基于大数定律，结合贝叶斯公式，利用语料库来计算一个句子（或词串）的概率的。n 个词串共现的概率为： <span class="math display">\[
+P(W) = P(w_1)P(w_2|w_1)...P(w_n|w_1,w_2,...,w_{n-1})
+\\
+where, \quad P(w_i) = \frac{count(w_i)}{count(\mathcal{C})}
+\\
+P(w_i|w_1,...,w_{i-1}) = \frac{count(w_1,...,w_{i-1},w_i)}{count(w_1,...,w_{i-1})}
+\]</span> 求解该模型的方法有很多，n-gram 模型、决策树、最大熵模型、最大熵马尔科夫模型、条件随机场、神经网络等。</p>
+<p>当所有的概率值都计算好之后便存储起来，下次需要计算一个词串的概率时，只需找到相关的概率参数，将之连乘即可。</p>
+<h3 id="n-gram">n-gram</h3>
+<p>添加 n-1 阶马尔科夫假设，得到 n-gram 模型（假设为 3-gram）： <span class="math display">\[
+P(w_i|w_1,...,w_{i-1}) = \frac{count(w_{i-2},w_{i-1},w_i)}{count(w_{i-2},w_{i-1})}
+\]</span></p>
+<p>当 n 越大：</p>
+<ol type="1">
+<li>模型对历史词的关联性越强，故可区别性越好（模型复杂度越高）；</li>
+<li>因模型复杂度呈指数级增高，大数定理的可靠性便越来越差（可理解为一种过拟合现象，因为模型复杂度相对于样本复杂度过高）。</li>
+</ol>
+<h4 id="数据稀疏问题">数据稀疏问题</h4>
+<blockquote>
+<p>产生该问题的根本原因是采用了统计语言模型。</p>
+</blockquote>
+<ol type="1">
+<li>语料库中可能出现<span class="math inline">\(count(w_1,...,w_{i-1},w_i) = 0\)</span>的情况，即该词串永远不会出现，但不应认为<span class="math inline">\(P(w_i|w_1,...,w_{i-1})=0\)</span>；</li>
+<li>语料库中可能出现<span class="math inline">\(count(w_1,...,w_{i-1}) = count(w_1,...,w_{i-1},w_i)\)</span>的情况，但不应认为$P(w_i|w_1,…,w_{i-1})=$1。</li>
+</ol>
+<p>这两种问题称为数据稀疏问题，该问题的出现与语料库的大小无关，由<a href="https://www.gelbukh.com/CV/Publications/2001/CICLing-2001-Zipf.htm">Zipf定律</a>知，在自然语言的语料库里，一个单词出现的频率与它在频率表里的排名成反比，故增大语料库依然无法解决数据稀疏问题。</p>
+<p>在 n-gram 模型中，当 n 达到一定值后，即使样本复杂度足够，由于数据稀疏问题，n 越大，性能反而越差。</p>
+<h4 id="平滑技术">平滑技术</h4>
+<p>平滑技术是针对数据稀疏问题引入的技术，常用的有：</p>
+<ul>
+<li>平滑：拉普拉斯平滑（加一平滑）、Lidstone 平滑（加 delta 平滑）、good-turing 平滑。</li>
+<li>回退：backoff、interpolation（软回退）、kneser-ney smoothing。</li>
+</ul>
+<h3 id="nnlm">NNLM</h3>
+<p><a href="http://www.jmlr.org/papers/volume3/bengio03a/bengio03a.pdf">A Neural Probabilistic Language Model, Bengio et. al（2003）</a></p>
+<p><img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/nlp/NNLM.png" alt="image-20200609162119122" style="zoom: 15%;" /></p>
+<p>E：(|V|*m)，一行对应一个单词的词向量表示。</p>
+<ul>
+<li><p>|V|：表示词汇表的大小，即语料库中的单词总数。</p></li>
+<li><p>m：表示词向量C(w)的维度。</p></li>
+</ul>
+<p>FF：全连接。</p>
+<ul>
+<li>n：n-gram中的n。</li>
+<li>h：隐藏层大小。</li>
+</ul>
+<h3 id="rnnlm">RNNLM</h3>
+<p><a href="https://www.fit.vutbr.cz/research/groups/speech/publi/2010/mikolov_interspeech2010_IS100722.pdf">Recurrent neural network based language model</a></p>
+<p>优势在于没有指定固定的语境，而是使用隐藏层的状态概括之前所有的语境信息。</p>
+<h2 id="词符表示">词符表示</h2>
+<blockquote>
+<p>tocken representation</p>
+</blockquote>
+<h3 id="discrete-representation">discrete representation</h3>
+<p>独热（one-hot representation）：可认为是一种基于符号的词表示方法。</p>
+<h3 id="distributed-representation">distributed representation</h3>
+<blockquote>
+<p>distributional similarity：通过理解单词出现的上下文来描述词汇意思。</p>
+<p>You shall know a word by the company it keeps. – <a href="https://en.wikipedia.org/wiki/John_Rupert_Firth">J.R.Firth 1957:11</a></p>
+</blockquote>
+<blockquote>
+<p>word vectors 或 word embeddings 含义相同，均指基于分布式相似性来构建的词符表示（distributed representation）。</p>
+<p>embedding 是指在一个更低维空间（相较词符的one-hot表示的空间）里编码词符含义。</p>
+</blockquote>
+<h4 id="共现矩阵">共现矩阵</h4>
+<p>用上下文来表示一个单词的方法。有两种计算方法：</p>
+<ul>
+<li>基于整个段落的，又称为潜在语义分析。</li>
+<li>基于窗口的（窗口内一般为5~10个单词）。</li>
+</ul>
+<p>one-hot的词表示方法类似于原始人类对新事物起名字，即创建一个全新的概念，概念内没有存储任何知识，可以说是一种符号表示； 共现矩阵的词表示方法类似于字典（用多个相近含义的词来解释一个词），它是用常共同出现在同一个窗口内的词来解释一个词，即一种测量语义距离的方法。</p>
+<p>共现矩阵缺点是维度灾难（向量维度为词符数量），常用 <a href="https://blog.csdn.net/ibunny/article/details/79408405">SVD</a> 来压缩矩阵以实现降维。</p>
+<h4 id="词向量">词向量</h4>
+<p>模型将会从每对单词出现的次数中习得统计结果。</p>
+<h5 id="word2vec">word2vec</h5>
+<blockquote>
+<p><a href="http://arxiv.org/pdf/1301.3781.pdf">Efficient Estimation of Word Representations in Vector Space</a></p>
+<p>通过完形填空的假任务来做词向量的学习。embedding层为词向量，后接的层为上下文环境，认为相同上下文环境下的词语义应相近。</p>
+</blockquote>
+<h6 id="模型">模型</h6>
+<p>Word2Vec模型中，主要有Skip-Gram和CBOW两种模型，如下图所示，从直观上理解，CBOW是『多对一』；Skip-Gram是『一对一』，故CBOW 比 Skip-Gram 训练快，但 Skip-Gram 对生僻词训练效果更好。</p>
+<p>CBOW模型中，FF获得的矩阵为各个word的上下文语义向量，E获得的矩阵为各个word的自身语义向量。通过FF与E的互相制约，同一个单词的上下文语义向量使得，<strong>凑在一起具有相同上下文语义的单词的自身语义向量，加起来能够与同一个上下文语义向量的内积最大</strong>。倾向于得到适用于求和的分布式语义，其向量语义含义为它所能构成的上下文语义的一个子向量。</p>
+<p>Skip-Gram模型中，FF获得的矩阵为在不同位置的各个word上下文语义向量，E获得的矩阵为各个word的自身语义向量。通过FF与E的互相制约，同一个单词在不同位置的上下文语义向量使得，<strong>在某一位置具有相同上下文语义的单词的自身语义向量，能够与该位置的同一个上下文语义向量内积最大</strong>。skip-gram之所以叫skip，是与n-gram相比，skip-gram为非连续的gram。倾向于得到适用于表示单一单词的分布式语义，其向量语义含义为skip-gram。</p>
+<p><img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/nlp/word2vec-CBOW.jpg" alt="word2vec-CBOW" style="zoom:15%;" /></p>
+<p><img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/nlp/word2vec-skip_gram.jpg" alt="word2vec-skip_gram" style="zoom:15%;" /></p>
+<p>相较NNLM，word2vec通过删掉了NNLM的隐藏层降低了计算复杂度，计算复杂度如下图所示：</p>
+<p><img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/nlp/word2vec-computation.jpg" alt="word2vec-computation" style="zoom:15%;" /></p>
+<p>对于Skip-Gram的具体实现，为了更有效地利用缓存，训练得更快，改变词对顺序，以采用NNLM的结构形式：</p>
+<p><img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/nlp/word2vec-skip_gram-implement.jpg" alt="word2vec-skip_gram-implement" style="zoom:15%;" /></p>
+<p>Skip-Gram的数据集本质是窗口内的『一对一』词对，故和计算共现矩阵一样，改变词对顺序最终获得的数据集是一样的，对训练本身没有影响：</p>
+<p><img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/nlp/word_pair-in-window.jpg" alt="word_pair-in-window" style="zoom:15%;" /></p>
+<p>作者解释<a href="https://groups.google.com/forum/#!topic/word2vec-toolkit/2R3XVndDXi8">1</a>,<a href="https://groups.google.com/forum/#!topic/word2vec-toolkit/1_nWLxZFOxo">2</a>如下：</p>
+<blockquote>
+<p>Tomas Mikolov 12/3/14 This is only for the computational efficiency reasons, it can be shown that both implementations of skip-gram are almost equal (just write on a paper what sequence of training pairs will you obtain for some sentence - it will be just shuffled differently if you predict the middle word given context versus predicting context words given the middle one).</p>
+<blockquote>
+<p>On Wednesday, December 3, 2014 12:54:00 AM UTC-5, Quan Liu wrote: Hi I review the word2vec code many times, i find CBOW and Skipgram models are in the same framework, the sole difference between them is just: CBOW uses the average of the context words to predict the core word, while Skipgram uses each of the context words to predict the core word (sequentially). However, in Tomas’s paper at ICLR-2013, the Skipgram model should use the core word to predict the context words, i wonder there maybe some special considerations for implementing the Skipgram model. Can anyone answer me the question? Quan</p>
+</blockquote>
+<p>Tomas Mikolov 1/30/15 If I got your question correctly, then this issue has been discussed here already several times before. Basically, the different order does not change the updates you do for the whole sentence, just changes the order.. the motivation was to use cache memory more efficiently, and have faster training.</p>
+</blockquote>
+<h6 id="hierarchical-softmax">hierarchical softmax</h6>
+<p><img src="/Users/wangweisong/seafile/knowledge-tree/blog_hexo/bkseastone/source/images/nlp/hierarchical-softmax.jpg" alt="hierarchical-softmax" style="zoom:15%;" /></p>
+<h6 id="negative-sampling">negative sampling</h6>
+<blockquote>
+<p>负采样的方式由模型（希望模型学到的东西）决定。</p>
+<p>word2vec模型学到的词向量为上下文特征，故任何一个词都应该成为负例；同时又考虑到一个词在整篇文本中出现的频率越高，它出现在core word周围的概率自然也相对较高，故采用如下的负采样方式（加权采样）。</p>
+</blockquote>
+<p>类似于hierarchical softmax用sigmod做预测，不同的是将树打平，并只取正例和几个负例做梯度反传，其中的几个负例通过negative sampling确定。</p>
+<p>【图】</p>
+<p>具体的 negative sampling 方法为：将一段长度为1的线段分成<span class="math inline">\(|V|\)</span>份，每份对应词汇表中的一个词，每个词对应的线段长度由下式确定： <span class="math display">\[
+len(w) = \frac{count(w)^{3/4}}{\sum\limits_{u \in vocab} count(u)^{3/4}}.
+\]</span> 然后将这段长度为1的线段划分成<span class="math inline">\(|M|\)</span>等份，这里<span class="math inline">\(|M|&gt;&gt;|V|\)</span> ，从而保证每个词对应的线段都会划分成对应的若干小块。最后从<span class="math inline">\(|M|\)</span>个位置中采样出neg个位置，从而得到neg个负例。</p>
+<p>对于小规模数据集，选择5-20个negative words会比较好，对于大规模数据集可以仅选择2-5个negative words。</p>
+<p>通过 negative sampling 方式构建的loss可以大大减少计算量，加快训练速度。举例，如果模型的输出层参数量为10000 * 300，我们选取neg为5，那么对于该网络层，我们只要更新(5+1) * 300 = 1800个权重值，是10000 * 300 = 3M总数据量的0.06%，计算资源可以大大节约。</p>
+<h6 id="subsampling">subsampling</h6>
+<h6 id="将词组对加入词典">将词组对加入词典</h6>
+<p>考虑到存在合起来和分开的意思大相径庭的词组，所以最好把它当作一个单词，不管是在上下文中还是在word vector中。可以基于词频的统计，找到那些在一起经常出现而在其他上下文中不常出现的词组。</p>
+<h6 id="训练策略">训练策略</h6>
+<blockquote>
+<p><a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2011/12/ASRU-2011.pdf">Strategies for Training Large Scale Neural Network Language Models</a></p>
+</blockquote>
+<h2 id="baidu-nlp-学习">BAIDU-NLP 学习</h2>
+<p><img src="/Users/wangweisong/Library/Application Support/typora-user-images/image-20200529110900009.png" alt="image-20200529110900009" style="zoom:50%;" /></p>
+<h3 id="粒度分析">粒度分析</h3>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:32Z" />
+  <title>linux环境编程基础</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">linux环境编程基础</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#内核">内核</a></li>
+<li><a href="#文件描述符">文件描述符</a></li>
+<li><a href="#文件">文件</a></li>
+<li><a href="#文件系统">文件系统</a></li>
+<li><a href="#库">库</a></li>
+<li><a href="#僵尸进程">僵尸进程</a></li>
+</ul>
+</nav>
+<h2 id="内核">内核</h2>
+<p>待续</p>
+<h2 id="文件描述符">文件描述符</h2>
+<p>内核为每个进程维护一个文件打开记录表，文件描述符为该文件在表中的索引值。</p>
+<h2 id="文件">文件</h2>
+<p>采用引用计数方式访问文件，当引用计数器为零时，内存管理机制便会对其进行垃圾回收。</p>
+<p>对于以下选中的情况，引用计数器会自加1：</p>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" checked="" />
+创建文件</li>
+<li><input type="checkbox" disabled="" />
+对该文件建立一个硬链接</li>
+<li><input type="checkbox" disabled="" checked="" />
+对该文件建立一个软链接</li>
+<li><input type="checkbox" disabled="" checked="" />
+每有一个进程访问该文件</li>
+</ul>
+<p>一个文件包括三项，目录项（<em>dentry</em>结构）、索引节点（<em>inode</em>结构）和文件数据。</p>
+<ol type="1">
+<li>目录项包括文件名和指向索引节点的指针等信息（当用<em>unlink</em>函数删除该项时，便在该目录中看不见该文件）；</li>
+<li>索引节点包括链接数、文件所有者、文件在磁盘的位置等文件属性；</li>
+<li>文件数据便是在磁盘上的数据块。</li>
+</ol>
+<p><strong>当对该文件建立硬链接（<code>ln src src_ln</code>）时，会额外创建<em>dentry</em>结构和<em>inode</em>结构，但两者的节点号一样（节点号可认为是文件数据的地址）；而当建立符号链接（<code>ln -sfn src src_ln</code>）时，则是额外创建了一个文本文件，里面包含了源文件的位置信息。两者完全不同，也不能抽象地比较优劣，只能就具体情况来说。</strong></p>
+<h2 id="文件系统">文件系统</h2>
+<ul>
+<li>实际文件系统（linux为ext文件系统）包括引导块、超级块（记录文件系统的管理信息）、索引节点区（保证了ext文件系统只有一个根节点）和数据区，其中超级块与索引节点区是区分文件系统有无的界限；</li>
+<li>虚拟文件系统只存于内存中，它的存在使得操作系统能够兼容足够多的文件系统，具体是将其他文件系统进行封装，并挂载到ext文件系统的目录树下，以使得内核能够以一致的方式访问其他文件系统；</li>
+<li>特殊文件系统proc，也只存于内存中，是内核的窗口，用于查看内核运行的实时信息。</li>
+</ul>
+<h2 id="库">库</h2>
+<ul>
+<li>在编译链接的过程中，链接器搜索静态库（archives）时会链接所有已引用却未处理的符号，而未引用或已处理的符号不会从静态库中链接出来，故链接库的链接位置应放置在命令行尾部，否则会出现符号未处理的情况；</li>
+<li>调用动态库的方式类似于对数据文件的读取，故只有在程序执行时才会装入内存，注意编译链接时须有链接选项<code>-ldl</code>；</li>
+<li>创建静态库的命令为<code>ar cr libtest.a test1.o test2.o</code>，编译成动态库的命令为<code>g++ -fPIC -shared -o libtest.so test1.o test2.o</code>。</li>
+</ul>
+<blockquote>
+<p>因为c不支持函数重载（即与c++函数签名方式不同），所以在c/c++混合编程时，须用extern “c” {}将c代码封装。</p>
+</blockquote>
+<h2 id="僵尸进程">僵尸进程</h2>
+<p>在每个进程退出的时候，内核释放该进程所有的资源，包括打开的文件、占用的内存等，但是仍然为其保留一定的信息(包括进程号，退出状态，运行时间等)， 只有父进程通过<em>wait/waitpid</em>来取时才释放，否则其进程号就会一定被占用，这样就导致了僵尸进程的问题。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

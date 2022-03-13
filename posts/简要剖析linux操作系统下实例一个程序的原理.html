@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:35Z" />
+  <title>简要剖析linux操作系统下执行一个程序的原理</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">简要剖析linux操作系统下执行一个程序的原理</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#预备知识">预备知识</a></li>
+<li><a href="#例子">例子</a>
+<ul>
+<li><a href="#预备知识1简易子栈">预备知识1——简易“子栈”</a></li>
+<li><a href="#预备知识2gcc内联汇编">预备知识2——GCC内联汇编</a></li>
+<li><a href="#预备知识3elf文件">预备知识3——ELF文件</a></li>
+<li><a href="#正文">正文</a></li>
+</ul></li>
+<li><a href="#附1fork返回两次的本质">附1：fork()返回两次的本质</a></li>
+<li><a href="#附2进程与线程的区别">附2：进程与线程的区别</a></li>
+</ul>
+</nav>
+<h1 id="预备知识">预备知识</h1>
+<p><a href="http://www.codebelief.com/article/2018/12/task-is-still-running-after-linux-shell-exits/" class="uri">http://www.codebelief.com/article/2018/12/task-is-still-running-after-linux-shell-exits/</a></p>
+<ul>
+<li>程序只是一段代码，独立的程序没有任何实际意义，只有将它置于一定的环境（上下文）内才有其意义。比如说，一个用C#写成的一段hello world代码在windows环境下编译生成的一个程序文件，将它放在ARM机里，在它实例化之前（即执行前），它与ARM机里其他可以执行的程序是一样的，只是一个占据着一定内存空间的二进制文件；一旦将这些二进制文件执行，实例化后产生的东西（称为进程）便具有了实际意义，即这个进程所能实现的功能，当然前提是它能在该环境中实例化，前面所提的C#程序文件便不能在ARM机中实例化。
+<ul>
+<li>综上，程序可认为是进程的抽象，一个程序可以实例化出任意多个进程。</li>
+</ul></li>
+<li>linux系统中所有的进程都是在0号进程的基础上fork生成的，故在开机后，运行的任何一个程序都是在某个程序的基础上fork生成后继而执行的。
+<ul>
+<li>因此，若要分析执行一个程序的原理，可用任意一个具体的例子进行说明，其中关键性部分几乎不会存在差异。</li>
+</ul></li>
+</ul>
+<h1 id="例子">例子</h1>
+<p><em>以在shell中执行<code>ls</code>命令为例，进行说明。</em></p>
+<h2 id="预备知识1简易子栈">预备知识1——简易“子栈”</h2>
+<p>建立“子栈”的概念。从一个函数A跳转到另一个函数B时会创建一个临时堆栈，称函数A（调用者）所在的堆栈为父栈，称函数B（被调用者）所在的堆栈为子栈。调用者的活动记录被看为父栈的栈框架，代表着父栈的结束子栈的开始。</p>
+<figure>
+<img src="https://img.vim-cn.com/56/d15757d87fe68ea6978d69616d15b73fff94b8.jpg" alt="childStack" /><figcaption aria-hidden="true">childStack</figcaption>
+</figure>
+<p>函数的活动记录按出栈顺序包括五个部分（真正能称为函数活动记录的只有2和3，故1-5称为栈框架更合理）：</p>
+<ol type="1">
+<li>参数：用于传递给被调用者B</li>
+<li>局部变量：调用者A的局部变量</li>
+<li>断点（返回地址）：A中调用B的位置</li>
+<li>动态链接：指向该函数调用者的活动记录的指针，通过它可实现子栈与父栈信息在地址空间上的分离</li>
+<li>被调用者的返回值：若被调用者B为 <code>void</code> 类型则没有该项</li>
+</ol>
+<p>记处于父栈环境的函数的活动记录为 <span class="math inline">\(S_0\)</span> ，当向运行时栈压入 <span class="math inline">\(S_0\)</span> 时便进入了子栈，当弹出 <span class="math inline">\(S_0\)</span> 时便进入了父栈。在一个子栈中运行的基本框架如下所示：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pushl <span class="op">%</span>ebp <span class="co">/*enter*/</span>        <span class="co">//压入处于父栈环境的函数的活动记录</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>movl <span class="op">%</span>esp <span class="op">%</span>ebp              </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">...</span>                         <span class="co">//子栈环境</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>movl <span class="op">%</span>ebp <span class="op">%</span>esp <span class="co">/*leave*/</span>    <span class="co">//恢复父栈环境</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>popl <span class="op">%</span>ebp                   </span></code></pre></div>
+<p><strong><em>note: <code>push</code>和<code>pop</code>都是依<code>sp</code>寻址的。</em></strong></p>
+<p>为深入理解该框架，要明确以下几点： ​<br />
+* 首先要明确一个CPU在某一确定的时刻只能运行在一个堆栈空间中，当建立起子栈后，CPU便已运行在了子栈中，当前起作用的堆栈空间便是子栈，而当CPU离开子栈后，起作用的堆栈空间便成了父栈，且方才用过的子栈不复存在，即永远也不可能再次回到方才起作用的子栈，但能再次创建一个新的子栈。这也是将子栈称为临时堆栈、子函数的变量称为临时变量的原因。从根本上来看，除最初开机时建立的堆栈外，所有的堆栈都是临时堆栈，而子父关系便是相对而言。</p>
+<ul>
+<li><p>其次由该框架可发现简易子栈与父栈在地址空间上是连续的,而若将子栈动态信息另存于系统中以实现再次寻回时（见正文），其框架只是加入了对子栈动态信息的保存和重载（因为子栈与父栈在地址空间上不再连续。而无法连续的原因是从子栈返回父栈后，子栈的数据极有可能被覆盖。所以连续的前提是确保子栈不会被第二次使用）。</p></li>
+<li><p>最后要明确正文中的堆栈之间实际上不是父子关系，而是平等的。依然采用子栈、父栈的名称是为了结合该简易子栈的框架方便理解。依据时间顺序，称后创建的为子栈。</p></li>
+</ul>
+<h2 id="预备知识2gcc内联汇编">预备知识2——GCC内联汇编</h2>
+<p>基本格式：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>asm <span class="dt">volatile</span><span class="op">(</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    汇编语句模板<span class="op">:</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    输出部分<span class="op">:</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    输入部分<span class="op">:</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    破坏描述部分</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">);</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">//即格式为asm(&quot;statements&quot;:output_regs:input_regs:clobbered_regs);</span></span></code></pre></div>
+<p>常用寄存器加载代码说明: |代码|说明| |-|:-| |a|使用寄存器eax| |b|使用寄存器ebx| |c|使用寄存器ecx| |d|使用寄存器edx| |m|使用内存地址| |o|使用内存地址并可以加偏移值| |r|使用任意动态分配的寄存器| |+|表示操作数可读可写| |=|输出操作数，输出值将替换前值|</p>
+<h2 id="预备知识3elf文件">预备知识3——ELF文件</h2>
+<p>待续</p>
+<h2 id="正文">正文</h2>
+<p>若将之前所述的子栈的信息保存在系统中，便可实现在运行于某子栈环境中的进程退出前，总是能够再次找到该子栈。可采用类似于如下的结构实现子栈信息的保存：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Thread <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">unsigned</span> <span class="dt">long</span> ip<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">unsigned</span> <span class="dt">long</span> sp<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>由此，对于进程，可用如下结构进行描述：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> PCB<span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> pid<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">unsigned</span> <span class="dt">long</span> task_entry<span class="op">;</span>   <span class="co">//进程入口点</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> stack<span class="op">[</span>STACK_SIZE<span class="op">];</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">volatile</span> <span class="dt">long</span> state<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Thread thread<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> PCB <span class="op">*</span>next<span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>运行一个进程基本需要以下第三步：</p>
+<ul>
+<li>创建0号进程：</li>
+</ul>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>asm <span class="dt">volatile</span><span class="op">(</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;movl %1,%%esp</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;pushl %1</span><span class="sc">\n\t</span><span class="st">&quot;</span>              <span class="co">//将0号进程栈底指针压栈</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;movl %1,%%ebp</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;pushl %0</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;ret</span><span class="sc">\n\t</span><span class="st">&quot;</span>                   <span class="co">//启动0号进程</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span><span class="st">&quot;c&quot;</span><span class="op">(</span>task<span class="op">[</span><span class="dv">0</span><span class="op">].</span>thread<span class="op">.</span>ip<span class="op">),</span><span class="st">&quot;d&quot;</span><span class="op">(</span>task<span class="op">[</span><span class="dv">0</span><span class="op">].</span>thread<span class="op">.</span>sp<span class="op">)</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="op">);</span></span></code></pre></div>
+<ul>
+<li>调度到一个尚未创建栈环境的进程x（即，创建子栈）：</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>asm <span class="dt">volatile</span><span class="op">(</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;pushl %%ebp</span><span class="sc">\n\t</span><span class="st">&quot;</span>           <span class="co">/*保存父栈环境*/</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;movl %%esp,%0</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;movl $1f,%1</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;movl %2,%%ebp</span><span class="sc">\n\t</span><span class="st">&quot;</span>         <span class="co">/*新建子栈环境*/</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;movl %2,%%esp</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;pushl %3</span><span class="sc">\n\t</span><span class="st">&quot;</span>              <span class="co">/*启动x号进程*/</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;ret</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span><span class="st">&quot;=m&quot;</span><span class="op">(</span>task<span class="op">[</span>NOW<span class="op">]-&gt;</span>thread<span class="op">.</span>sp<span class="op">),</span><span class="st">&quot;=m&quot;</span><span class="op">(</span>task<span class="op">[</span>NOW<span class="op">]-&gt;</span>thread<span class="op">.</span>ip<span class="op">)</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span><span class="st">&quot;m&quot;</span><span class="op">(</span>task<span class="op">[</span>x<span class="op">]-&gt;</span>thread<span class="op">.</span>sp<span class="op">),</span><span class="st">&quot;m&quot;</span><span class="op">(</span>task<span class="op">[</span>x<span class="op">]-&gt;</span>thread<span class="op">.</span>ip<span class="op">)</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="op">);</span></span></code></pre></div>
+<ul>
+<li>调度到已经存在栈环境（即，至少运行过一次）的进程x（即，切换栈环境）：</li>
+</ul>
+<div class="sourceCode" id="cb7"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>asm <span class="dt">volatile</span><span class="op">(</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;pushl %%ebp</span><span class="sc">\n\t</span><span class="st">&quot;</span>           <span class="co">/*保存父栈环境*/</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;movl %%esp,%0</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;movl $1f,%1</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;movl %2,%%esp</span><span class="sc">\n\t</span><span class="st">&quot;</span>         <span class="co">/*切换栈环境*/</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;pushl %3</span><span class="sc">\n\t</span><span class="st">&quot;</span>              <span class="co">/*切换至x号进程*/</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;ret</span><span class="sc">\n\t</span><span class="st">&quot;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;1:</span><span class="sc">\t</span><span class="st">&quot;</span>                      <span class="co">//下条指令的地址即为$1f对应的地址</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;popl %%ebp</span><span class="sc">\n\t</span><span class="st">&quot;</span>            <span class="co">//此处pop出的是上次x进程被切换出去时push进去的ebp</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span><span class="st">&quot;=m&quot;</span><span class="op">(</span>task<span class="op">[</span>NOW<span class="op">]-&gt;</span>thread<span class="op">.</span>sp<span class="op">),</span><span class="st">&quot;=m&quot;</span><span class="op">(</span>task<span class="op">[</span>NOW<span class="op">]-&gt;</span>thread<span class="op">.</span>ip<span class="op">)</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span><span class="st">&quot;m&quot;</span><span class="op">(</span>task<span class="op">[</span>x<span class="op">]-&gt;</span>thread<span class="op">.</span>sp<span class="op">),</span><span class="st">&quot;m&quot;</span><span class="op">(</span>task<span class="op">[</span>x<span class="op">]-&gt;</span>thread<span class="op">.</span>ip<span class="op">)</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="op">);</span></span></code></pre></div>
+<p>结合以上三点，便可总结调度器切换进程的简要步骤（省略进程的优先级策略等）：</p>
+<ol type="1">
+<li><p>保存栈环境：进程断点压栈（编译器自动生成该指令），进程栈底指针压栈，保存进程栈顶指针，并保存恢复栈环境指令的首地址<code>$1f</code>。</p></li>
+<li><p>转移栈环境：给栈顶指针赋值，并弹出新进程栈底指针和断点。</p></li>
+</ol>
+<p>假设可执行文件是静态链接的（不考虑共享库），实例一个程序只需将程序的文本段、数据段、bss段和堆栈段映射到进程线性区，然后结合上述的第二点，调度到这个尚未创建栈环境的进程，之后只运行上述的第三点即可，从而便实现了对一个程序的实例化。</p>
+<h1 id="附1fork返回两次的本质">附1：fork()返回两次的本质</h1>
+<p>待续</p>
+<blockquote>
+<p>refernece0: <a href="http://www.cnblogs.com/latifrons/archive/2009/09/17/1568198.html">C语言ASM汇编内嵌语法zz</a></p>
+</blockquote>
+<blockquote>
+<p>reference1: <a href="http://mooc.study.163.com/course/USTC-1000029000">linux内核分析</a></p>
+</blockquote>
+<h1 id="附2进程与线程的区别">附2：进程与线程的区别</h1>
+<p>进程是面向系统的，线程是面向cpu的，所以说，进程是资源分配的最小单位，线程是程序执行的最小单位。</p>
+<ol type="1">
+<li>区别：
+<ul>
+<li>同一进程中的线程间共享数据段、代码段和虚拟地址空间（页表），而进程间不共享，对于栈环境和管理运行期信息的数据结构，进程和线程均不共享</li>
+</ul></li>
+<li>优劣对比：
+<ul>
+<li>对于频繁创建和销毁的任务，线程更有优势：
+<ul>
+<li>因数据段、代码段和虚拟地址空间的共享，线程消耗内存更少、消耗时间更短</li>
+</ul></li>
+<li>对于需要频繁切换的任务，线程更有优势：
+<ul>
+<li>线程间共享虚拟地址空间，切换线程不需更新内核的页表缓存</li>
+</ul></li>
+<li>对于多任务并发的情况，没有定论：
+<ul>
+<li>视运行环境而定，一般情况下，因多线程可用栈空间被限制在了进程的栈空间中，对于巨额工作量任务的情况多进程更快，而小额工作量任务的情况反之</li>
+</ul></li>
+</ul></li>
+<li>总：
+<ul>
+<li>线程多用于开发细粒度并行性，进程用于开发粗粒度并行性</li>
+<li>线程间易共享数据，进程间须使用进程间通讯机制</li>
+</ul></li>
+</ol>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

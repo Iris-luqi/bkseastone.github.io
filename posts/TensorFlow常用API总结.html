@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:32Z" />
+  <title>TensorFlow常用API总结</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">TensorFlow常用API总结</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#tensor">tensor</a></li>
+<li><a href="#operation">operation</a></li>
+</ul>
+</nav>
+<h2 id="tensor">tensor</h2>
+<h3 id="创建"><a href="https://www.jianshu.com/p/2061b221cd8f?utm_campaign=maleskine&amp;utm_content=note&amp;utm_medium=seo_notes&amp;utm_source=recommendation">创建</a></h3>
+<p>使用<code>tf.Variable</code>时，如果检测到命名冲突，系统会自己处理，即tf.Variable() 每次都在创建新对象，所以reuse=True 和它并没有什么关系。</p>
+<p>使用<code>tf.get_variable()</code>时，且reuse=True， 如果已经创建的变量对象，就把那个对象返回，如果没有创建变量对象的话，就创建一个新的，而当reuse=False，系统不会处理冲突，会报错。</p>
+<h3 id="shape"><a href="https://blog.csdn.net/baidu_15113429/article/details/81063551">shape</a></h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> tf.placeholder(tf.int32,shape<span class="op">=</span>[<span class="dv">2</span>,<span class="dv">2</span>])</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(tf.shape(x1))  <span class="co"># Tensor(&quot;Shape:0&quot;, shape=(2,), dtype=int32)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(x1.get_shape())  <span class="co"># (2, 2)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> tf.placeholder(tf.int32)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>x3<span class="op">=</span>tf.reshape(x2,[<span class="dv">2</span>,<span class="dv">2</span>])</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(tf.shape(x2))  <span class="co"># </span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>x4 <span class="op">=</span> tf.placeholder(tf.int32)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>x4.set_shape([<span class="dv">2</span>,<span class="dv">2</span>])</span></code></pre></div>
+<p><code>shape</code>返回值是一个tensor；<code>get_shape</code>返回的是一个tuple，可以通过as_list()的操作转换成list；<code>reshape</code>生成一个新的shape，x3跟x2是一个不同的tensor，常用于将不确定shape的tensor转为确定shape的tensor，其准确性由编码员保证；<code>set_shape</code>只是设置placeholder的shape。</p>
+<h3 id="计算">计算</h3>
+<h3 id="拼接"><a href="https://blog.csdn.net/loseinvain/article/details/79638183">拼接</a></h3>
+<p><code>tf.concat</code>相当于numpy中的<code>np.concatenate</code>函数，用于将两个张量在某一个维度(axis)合并起来：<code>ab=tf.concat([a,b],axis=3)</code>。</p>
+<p><code>tf.stack</code>会在新的张量阶上拼接，产生的张量的阶数将会增加，所以与<code>tf.concat</code>不同，axis是决定其层叠(stack)张量的维度方向的。</p>
+<p><code>tf.unstack</code>与<code>tf.stack</code>的操作相反，是将一个高阶数的张量在某个axis上分解为对应个数的低阶张量。</p>
+<h2 id="operation">operation</h2>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

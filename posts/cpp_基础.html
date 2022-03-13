@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:32Z" />
+  <title>cpp:基础</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">cpp:基础</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#前言">前言</a></li>
+<li><a href="#内存分配方式">内存分配方式</a></li>
+<li><a href="#类的定义">类的定义</a>
+<ul>
+<li><a href="#类中的成员函数与数据成员类型">类中的成员函数与数据成员类型</a></li>
+<li><a href="#类中对象的特性">类中对象的特性</a></li>
+<li><a href="#访问控制">访问控制</a></li>
+</ul></li>
+<li><a href="#类的应用">类的应用</a>
+<ul>
+<li><a href="#使用哲学">使用哲学</a></li>
+<li><a href="#左值右值及其引用"><span>左值、右值及其引用</span></a></li>
+<li><a href="#运算符重载">运算符重载</a></li>
+<li><a href="#函子">函子</a></li>
+</ul></li>
+<li><a href="#异常">异常</a></li>
+<li><a href="#字符串操作">字符串操作</a>
+<ul>
+<li><a href="#字符串分割">字符串分割</a></li>
+<li><a href="#类型转换">类型转换</a></li>
+<li><a href="#删除">删除</a></li>
+</ul></li>
+<li><a href="#指针相关操作">指针相关操作</a>
+<ul>
+<li><a href="#共享指针">共享指针</a></li>
+</ul></li>
+<li><a href="#容器操作">容器操作</a>
+<ul>
+<li><a href="#增">增</a></li>
+<li><a href="#删">删</a></li>
+<li><a href="#改">改</a></li>
+<li><a href="#查">查</a></li>
+</ul></li>
+<li><a href="#misc">misc</a>
+<ul>
+<li><a href="#指针与引用">指针与引用</a></li>
+</ul></li>
+<li><a href="#一些能体现-cpp-底层实现的奇葩操作">一些能体现 cpp 底层实现的奇葩操作</a></li>
+</ul>
+</nav>
+<figure>
+<img src="https://img.vim-cn.com/3d/d8e0cb1c75e3cf027e4173075c5065edd6aab0.png" alt="cpp" /><figcaption aria-hidden="true">cpp</figcaption>
+</figure>
+<h1 id="前言">前言</h1>
+<p>若将计算机语言分类，有多种分类方式，最一般化的分类为 statically-typed（变量类型在编译时确定，并不再改变）和 dynamically-typed（变量类型在运行时确定，并可动态变化）两种，还有很多可以作为补充修饰的分类，如 strongly-typed, duck typing 等。cpp 为保证运行速度在编译完成后便确定了所有的数据类型，所以属于 statically-typed language。</p>
+<p>cpp 也属于一种 duck typing。 cpp 提供了两种类型的多态，runtime polymorphism（基于虚函数实现）和 compile-time polymorphism（基于模板实现），分别为面向对象编程和泛型编程的基础。基于模板实现的编译时多态，可以认为是一种 duck typing，它不关心这些对象的类型具体是什么，只关心他们是否支持某些特殊操作。Duck typing 的好处是它可以将 API 和代码彻底解耦，大大提高了编码的灵活性。它不依赖于继承关系去做类型检查，它是在编译时做 duck test 实现类型检查的。因为它为保证运行速度，并不做运行时类型检查，所以只是一种 compile-time duck typing。相较完全的 duck typing 而言，cpp 的缺点自然是代码更加繁琐。</p>
+<p>cpp 也属于一种 strongly-typed language，虽然丧失了灵活性，但提高了类型安全性，利于 debug。</p>
+<h1 id="内存分配方式">内存分配方式</h1>
+<p>分为</p>
+<ul>
+<li>堆（用户动态分配的变量的内存放在这，如<code>new</code>，声明周期持续到<code>delete</code>）</li>
+<li>栈（由编译器自动分配清除的变量的内存放在这，如局部变量、函数形参等，生命周期持续到作用域结束）</li>
+<li>静态存储区（用户静态分配的变量（包括初始化和未初始化的）的内存放在这，如全局变量、静态变量等，生命周期持续到程序结束）</li>
+<li>常量存储区（字符串常量和代码段所需的内存放在这，生命周期持续到程序结束）</li>
+</ul>
+<p>堆与栈结合的艺术：</p>
+<ul>
+<li>如某函数代码块中有<code>float *p = (float *)malloc(sizeof(float)*100);</code>，其中<code>p</code>的内存被分配在栈中，而其指向的那片动态申请的内存被分配在堆中，假如<code>p</code>移情别恋指向了别的地方（或者生命周期到了，死掉了），只要那片内存区域有人接管（或者说其地址有被保存下来），那就还能继续在那上面操作。</li>
+<li>A CASE: 初始化局部数组变量的字符串的内存是被分配在栈中的（与数组的定义相悖，<strong>数组元素应被数组包含，即数组元素所在的区域应由数组决定</strong>），而初始化局部指针变量的字符串的内存是被分配在常量存储区的（这与指针的定义相符，<strong>指针作为一个接口，其通向的对象所在的区域自然由对象本身决定，与接口无关</strong>），所以有时会遇见函数块中的局部变量字符串被作为返回参数传了出来，其实传出来的是在常量存储区中的字符串常量的地址。由此启发：编程应从内存分配的区域出发（如：<strong>这是个栈变量，这是个常量，这是个堆变量，这是个静态区变量，这是个代码块</strong>），而非从变量类型出发（如：这是个整型的数据成员，这是个字符串常量，这是个动态分配的内存，这是个全局数组，这是个普通成员函数）。</li>
+<li>NOTICE: 加<code>const</code>修饰符不能决定变量的存储区域，它只在编译时起作用。可以通过加<code>static</code>修饰符使得变量的存储区域强制为静态存储区，不过加了<code>static</code>修饰符后，虽然变量被放在了静态存储区，但它的作用域仍不是全局的，只在其对应的代码块中，如类的静态成员变量、某个源文件中的加<code>static</code>修饰的函数。</li>
+</ul>
+<p>在使用堆变量时，建议形成一下习惯：</p>
+<ul>
+<li><code>new</code>一片内存后，应立即检查指针值是否为<code>NULL</code>，防止在runtime时才报错（不完善的OS可能会直接宕掉）。</li>
+<li>不要忘记为动态内存赋初值，防止将未被初始化的内存作为右值使用。</li>
+</ul>
+<h1 id="类的定义">类的定义</h1>
+<blockquote>
+<p>类的声明与普通变量声明不同，类声明是一种类型的声明，它只声明一个类的“尺寸和规格”，并不进行实际的内存分配。</p>
+<p>cpp规定在实例化一个对象时会生成6个默认的成员函数：无参构造函数，拷贝构造函数，<code>=</code>重载函数，析构函数，<code>&amp;</code>重载函数和<code>&amp; const</code>重载函数。</p>
+</blockquote>
+<h2 id="类中的成员函数与数据成员类型">类中的成员函数与数据成员类型</h2>
+<ol type="1">
+<li>类中的方法自然是生成的所有对象公用的方法，不过为保证信息隐藏，依据<strong>方法与对象个体的数据间的通信权限</strong>，可分为三类：
+<ul>
+<li>静态成员函数：方法与数据间不许通信，只在逻辑上有所联系（通过不给予缺省的对象指针 <code>this</code> 实现）；</li>
+<li>常成员函数：方法与数据间需要通信，但限制为不能修改数据内容（通过将 <code>T * const this</code> 改为 <code>const T * const this</code> 实现）；</li>
+<li>普通成员函数：方法与数据间需要通信，且读写权限无限制；</li>
+</ul></li>
+<li>构造函数的初始化列表解决了两个问题（导致这两个问题的原因是初始化对象时会有两次生成（将这两次生成分别称为<strong>初始化</strong>和<strong>构造</strong>），比如结构体就没有这两个问题；同时也是因为两次生成（第一次是通用的生成，第二次是调用构造函数的生成）的原因，<code>new</code> 一个结构体时后面接结构体类型，而 <code>new</code> 一个对象时后面不是接类类型而是接对象（因为需要知道调用的是哪个构造函数））：
+<ul>
+<li>常数据成员的初始化问题（会导致编译无法通过）；</li>
+<li>类类型数据成员的两次构造问题（需额外创造一个临时对象，影响效率）；</li>
+</ul></li>
+<li>类与对象的直觉：
+<ul>
+<li>考虑一个对象时，包含两部分：对象本身、该对象在堆上生成的数据；</li>
+<li>考虑一个类时，包含两部分：由类定义生成的无数个对象、该类的静态数据成员；</li>
+</ul></li>
+<li>虚拟继承解决了多继承时派生类中可能包含公共基类的多个副本，称该基类为虚基类。</li>
+</ol>
+<h2 id="类中对象的特性">类中对象的特性</h2>
+<h3 id="重载与多态">重载与多态</h3>
+<blockquote>
+<p>重载（overload）是处理同<strong>一个类</strong>中同名方法时出现的现象，多态（override，又称重写）是处理<strong>多个类</strong>（有公共基类）中同名方法时出现的现象。</p>
+</blockquote>
+<ol type="1">
+<li><p>实现方法：</p>
+<ul>
+<li><p>重载的一种实现方法：编译器根据同名方法的不同参数表将同名方法重命名，从而成为一般的不同方法；</p></li>
+<li><p>多态的一种实现方法：通过维护一个虚函数地址表，基类对象就可以根据当前赋值给它的派生类对象的特性以不同的方式运作；</p></li>
+</ul></li>
+<li><p>基类对象的多态性是通过类的赋值兼容性实现的，而类的赋值兼容性是通过派生类实际内存分布实现的，故只有公有派生时才会有多态性；</p></li>
+<li><p>动态绑定：只有当赋值为指针或引用类型时，才能知晓该指针（引用）指向的是哪个子类，进而才能利用虚函数技术，查询虚函数地址表，实现多态；而当赋给对象本身的拷贝时，只是内存的拷贝，没有RTTI，故无法实现多态；</p></li>
+<li><p>抽象类：</p>
+<ul>
+<li>带纯虚函数的类称为抽象类；</li>
+<li>抽象类不能声明对象；</li>
+<li>抽象类一般使用虚析构函数，以保持多态性，从而能够正确释放对象，避免内存泄露；</li>
+</ul></li>
+</ol>
+<h4 id="多态的实现细节虚函数表"><a href="https://www.zhangjiee.com/blog/cpp-vtable">多态的实现细节——虚函数表</a></h4>
+<h5 id="函数指针">函数指针</h5>
+<p>函数指针需显示地声明输入输出参数类型来给编译器提供中断/恢复现场所需的信息 （否则即使解引用某个函数地址并后接括号，也无法正确调用该函数），且考虑到安全问题，不允许隐式的类型转换。函数指针存储的就是代码块的地址（该地址由编译器自动分配）。</p>
+<p>与数组类似，函数名在作为一个值使用时会隐式地转换为指针，函数类型在作为形参使用时同样也会隐式地转换为指针。在使用函数指针调用函数时也会隐式地解引用（不要纠结函数地址解引用后是什么，记住解引用后的东西只用于后接括号这一种情况就好了）。为保证较好的阅读性，推荐如下的使用方法：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> <span class="op">(*</span>pfunc<span class="op">)(</span><span class="dt">void</span><span class="op">)</span> <span class="op">=</span> <span class="op">&amp;</span>func<span class="op">;</span> <span class="co">// 显式地表明这是函数地址</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>pfunc<span class="op">();</span> <span class="co">// 统一规范函数调用形式，隐去编译器内部的繁琐操作</span></span></code></pre></div>
+<p>另外，函数名代表的是那一段代码块，在编译时起符号链接作用，类似于变量名代表的便是那一个对象。</p>
+<p>而类成员函数指针为能解决因为C++的多重继承、虚继承而带来的类实例地址的调整问题，在调用的时候一定要传入类实例对象，示例如下：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> <span class="op">(</span>A<span class="op">::*</span>pfunc<span class="op">)(</span><span class="dt">void</span><span class="op">)</span> <span class="op">=</span> <span class="op">&amp;</span>A<span class="op">::</span>func<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>A a0 <span class="op">=</span> <span class="kw">new</span> A<span class="op">();</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">(</span>a0<span class="op">-&gt;*</span>pfunc<span class="op">)();</span>  <span class="co">//调用时必须要加类的对象名和*符号</span></span></code></pre></div>
+<h5 id="单一继承">单一继承</h5>
+<p>为了保证取到虚函数表的有最高的性能——如果有多层继承或是多重继承的情况下，编译器一般将虚函数表的指针存放于对象实例中最前面的位置。</p>
+<ul>
+<li><p>当没有虚函数重载时，派生类的虚函数表为：虚函数按声明顺序放于表中，基类的虚函数在派生类的虚函数前面。</p></li>
+<li><p>当有虚函数重载时，派生类的虚函数表中基类被重载的虚函数在原位置被覆盖，同时派生类的虚函数不再保留，其他的依旧。由基类指针所调用的虚函数名来静态确定在虚函数表中的偏移量，各派生类的虚函数表也在<strong>编译时</strong>静态生成；至于具体使用哪一个虚函数表，在<strong>运行时</strong>由基类指针的指向的具体内容决定。因为重载的虚函数是在基类的原位置覆盖，这就实现了多态。所以，早绑定是指要 call 的函数地址在编译期便被嵌入在了常量存储区（代码区），而晚绑定是指要 call 的函数地址是被放在栈中的，只有在运行时才能取到，也可以说是间接寻址。</p></li>
+</ul>
+<p>注意，若仍然想在派生类调用基类中被重载的虚函数，可用域名解析符来调用<code>child-&gt;Base::v_func()</code>，如此编译器便不再走虚函数表，而是直接将函数地址插进来。</p>
+<h5 id="运行时多态">运行时多态</h5>
+<p>运行时多态可以看做为 <strong>dynamically-typed 的一种特性，它允许一个不知道具体类型的对象（但知道其基类类型）去调用一个只知道接口的函数</strong>，它与真正的 dynamically-typed language 不同，它通过虚函数表的技术在编译时实现类型安全检查。</p>
+<p>若说继承的目的是代码重用，那么多态的目的便是接口重用。</p>
+<h2 id="访问控制">访问控制</h2>
+<blockquote>
+<p>类的一个特征是封装，public 和 private 用于实现这一目的；类的另一个特征是继承，protected 用于实现这一目的，其权限介于 public 和 private 两者中间，该访问权限下的成员只在整个继承树内可见，在外部不可见。</p>
+<p>cpp所有的访问控制都是在语言级别实现的，而非内存访问逻辑级别。</p>
+</blockquote>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">成员变量修饰符</th>
+<th style="text-align: center;">类外的普通函数</th>
+<th style="text-align: center;">public 派生类</th>
+<th style="text-align: center;">private 派生类</th>
+<th style="text-align: center;">protected 派生类</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">public</td>
+<td style="text-align: center;">可以访问</td>
+<td style="text-align: center;">可以访问（public）</td>
+<td style="text-align: center;">可以访问（private）</td>
+<td style="text-align: center;">可以访问（protected）</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">protected</td>
+<td style="text-align: center;">无法访问</td>
+<td style="text-align: center;">可以访问（protected）</td>
+<td style="text-align: center;">可以访问（private）</td>
+<td style="text-align: center;">可以访问（protected）</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">private</td>
+<td style="text-align: center;">无法访问</td>
+<td style="text-align: center;">无法访问（private）</td>
+<td style="text-align: center;">无法访问（private）</td>
+<td style="text-align: center;">无法访问（private）</td>
+</tr>
+</tbody>
+</table>
+<h1 id="类的应用">类的应用</h1>
+<h2 id="使用哲学">使用哲学</h2>
+<ol type="1">
+<li>使用类是为了数据封装，故在编码时尽量做到不直接操作数据，而通过接口进行沟通；</li>
+<li>使用继承是为了实现多态，故在无需多态的情况下，能用组合就用组合。</li>
+</ol>
+<h2 id="左值右值及其引用"><a href="https://codinfox.github.io/dev/2014/06/03/move-semantic-perfect-forward/">左值、右值及其引用</a></h2>
+<ol type="1">
+<li>cpp中的左值与右值（与c不同）：
+<ul>
+<li>左值是指在单个表达式的外部依然保留的对象，右值是指在单个表达式的外部不再保留的临时值；</li>
+<li>能取到地址的便是左值，不能取到地址的便是右值；</li>
+<li>有名字的便是左值，没有名字的便是右值；</li>
+</ul></li>
+<li>移动语义：当用右值引用来保留临时右值进而做一些操作时，与左值引用无异，差别在于右值会在操作完成后立即被系统析构掉，而左值会一直保留，直至退出当前栈环境为止（该右值引用的保留操作称为移动语义，因为编译器将已命名的右值引用视为左值，即将右值语义移动为左值语义）；</li>
+<li>移动构造函数：当需要构造能够完美转发的代码时，类须定义移动构造函数，移动构造的对象与拷贝构造的对象的不同之处在于它无须再在堆中重新构造和析构该对象所拥有的数据成员，即浅拷贝，为浅拷贝专门定义一个构造函数是为解决对浅拷贝中同一地址的二次析构问题，至此深拷贝与浅拷贝均有了各自的构造函数（完美转发的代码须满足两个条件：形参为 <code>T&amp;&amp;</code> 类型，类型 <code>T</code> 必须是通过推断得到的）。</li>
+<li>右值引用的意义：
+<ul>
+<li>可以使得字符串作为函数的 nonconst 类型的参数，即允许在函数内部做加工；</li>
+<li>可避免产生过多的构造与赋值函数，以提高效率；</li>
+</ul></li>
+</ol>
+<p>示例代码如下：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#define MALLOC </span><span class="op">(!</span><span class="dv">0</span><span class="op">)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> <span class="bu">std::</span>cout<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> <span class="bu">std::</span>cin<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">// simulate memory block</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> A<span class="op">{</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a> <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  A<span class="op">()</span> <span class="op">{}</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  A<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=</span> <span class="op">(</span><span class="at">const</span> A<span class="op">&amp;</span> a<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">build A --memcpy&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">~</span>A<span class="op">()</span> <span class="op">{</span> <span class="cf">if</span><span class="op">(</span>_pointer<span class="op">)</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">remove A --free&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> _pointer<span class="op">;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> B <span class="op">{</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a> <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  B<span class="op">()</span> <span class="op">:</span> _id<span class="op">(++</span>idProduce<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">build A --malloc&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span> </span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    _a<span class="op">.</span>_pointer <span class="op">=</span> MALLOC<span class="op">;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">...... constructor&quot;</span> <span class="op">&lt;&lt;</span> _id <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  B<span class="op">(</span><span class="at">const</span> B<span class="op">&amp;</span> b<span class="op">)</span> <span class="op">:</span> _id<span class="op">(++</span>idProduce<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    _a<span class="op">.</span>_pointer <span class="op">=</span> MALLOC<span class="op">;</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">build A --malloc&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span> </span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    _a <span class="op">=</span> b<span class="op">.</span>_a<span class="op">;</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">...... copy constructor&quot;</span> <span class="op">&lt;&lt;</span> _id <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  B<span class="op">(</span>B<span class="op">&amp;&amp;</span> b<span class="op">)</span> <span class="op">:</span> _id<span class="op">(++</span>idProduce<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    b<span class="op">.</span>_a<span class="op">.</span>_pointer <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">...... move constructor&quot;</span> <span class="op">&lt;&lt;</span> _id <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  <span class="op">~</span>B<span class="op">()</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">...... deconstructor&quot;</span> <span class="op">&lt;&lt;</span> _id <span class="op">&lt;&lt;</span> endl<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> getid<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> _id<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>  A _a<span class="op">;</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="dt">int</span> idProduce<span class="op">;</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a> <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> _id<span class="op">;</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> B<span class="op">::</span>idProduce <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun0<span class="op">(</span>B b<span class="op">)</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">[RUN] fun0&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun1<span class="op">(</span>B<span class="op">&amp;</span> b<span class="op">)</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">[RUN] fun1&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun2<span class="op">(</span>B<span class="op">&amp;&amp;</span> b<span class="op">)</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">[RUN] fun2&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> target_fun<span class="op">(</span>T v<span class="op">)</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">[RUN] target_fun&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> test<span class="op">(</span>T<span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">[RUN] test&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span> </span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>  target_fun<span class="op">(</span><span class="bu">std::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">(</span>v<span class="op">));</span> <span class="co">// v shouldnt be used after here!!</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">void</span><span class="op">)</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> endl <span class="op">&lt;&lt;</span> <span class="st">&quot;# without move segmentic&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> <span class="st">&quot;* situation 1(Lvalue copy)&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>  B b1<span class="op">;</span></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>  fun0<span class="op">(</span>b1<span class="op">);</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>  <span class="co">// delete &amp;b1; //core dump due to b1 is on stack not heap!!</span></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> <span class="st">&quot;* situation 2(Lvalue reference)&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>  B b2<span class="op">;</span></span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>  fun1<span class="op">(</span>b2<span class="op">);</span></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> endl <span class="op">&lt;&lt;</span> <span class="st">&quot;# use move segmentic without the help of Lvalue&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>  fun2<span class="op">(</span>B<span class="op">());</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> endl <span class="op">&lt;&lt;</span> <span class="st">&quot;# perfect forward&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> <span class="st">&quot;* situation 1(Lvalue copy)&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>  B<span class="op">&amp;</span> b3 <span class="op">=</span> <span class="op">*(</span><span class="kw">new</span> B<span class="op">());</span></span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>  test<span class="op">(</span>b3<span class="op">);</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>  <span class="kw">delete</span> <span class="op">&amp;</span>b3<span class="op">;</span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> <span class="st">&quot;* situation 2(Rvalue)&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>  test<span class="op">(</span>B<span class="op">());</span></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>  cout <span class="op">&lt;&lt;</span> <span class="st">&quot;* std::move&quot;</span> <span class="op">&lt;&lt;</span> endl<span class="op">;</span></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>  B b4<span class="op">;</span></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>  test<span class="op">(</span><span class="bu">std::</span>move<span class="op">(</span>b4<span class="op">));</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>运行结果为：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># without move segmentic</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">*</span> situation 1<span class="er">(</span><span class="ex">Lvalue</span> copy<span class="kw">)</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--malloc</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> constructor1</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--malloc</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--memcpy</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> copy constructor2</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[RUN]</span> fun0</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor2</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="ex">remove</span> A <span class="at">--free</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ex">*</span> situation 2<span class="er">(</span><span class="ex">Lvalue</span> reference<span class="kw">)</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--malloc</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> constructor3</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[RUN]</span> fun1</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># use move segmentic without the help of Lvalue</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--malloc</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> constructor4</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[RUN]</span> fun2</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor4</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="ex">remove</span> A <span class="at">--free</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co"># perfect forward</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="ex">*</span> situation 1<span class="er">(</span><span class="ex">Lvalue</span> copy<span class="kw">)</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--malloc</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> constructor5</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[RUN]</span> test</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--malloc</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--memcpy</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> copy constructor6</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[RUN]</span> target_fun</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor6</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    <span class="ex">remove</span> A <span class="at">--free</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor5</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    <span class="ex">remove</span> A <span class="at">--free</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="ex">*</span> situation 2<span class="er">(</span><span class="ex">Rvalue</span><span class="kw">)</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--malloc</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> constructor7</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[RUN]</span> test</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> move constructor8</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[RUN]</span> target_fun</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor8</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    <span class="ex">remove</span> A <span class="at">--free</span></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor7</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a><span class="ex">*</span> std::move</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    <span class="ex">build</span> A <span class="at">--malloc</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> constructor9</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[RUN]</span> test</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> move constructor10</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[RUN]</span> target_fun</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor10</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>    <span class="ex">remove</span> A <span class="at">--free</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor9</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor3</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>    <span class="ex">remove</span> A <span class="at">--free</span></span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>    <span class="ex">......</span> deconstructor1</span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>    <span class="ex">remove</span> A <span class="at">--free</span></span></code></pre></div>
+<h2 id="运算符重载">运算符重载</h2>
+<h2 id="函子">函子</h2>
+<h1 id="异常">异常</h1>
+<h1 id="字符串操作">字符串操作</h1>
+<h2 id="字符串分割">字符串分割</h2>
+<h2 id="类型转换">类型转换</h2>
+<p>http://wiki.baidu.com/display/GR/coding+best+practice#codingbestpractice-1.%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8std::ostringstream%E3%80%81boost::lexical_cast%E3%80%81std::stoi%E7%AD%89%E7%B3%BB%E5%88%97%E5%87%BD%E6%95%B0</p>
+<h2 id="删除">删除</h2>
+<h1 id="指针相关操作">指针相关操作</h1>
+<h2 id="共享指针">共享指针</h2>
+<h1 id="容器操作">容器操作</h1>
+<h2 id="增">增</h2>
+<p>http://wiki.baidu.com/pages/viewpage.action?pageId=321387207#id-%E9%9D%99%E6%80%81%E5%88%86%E6%9E%90%E4%B8%BB%E9%A1%B5-feed-fork-9</p>
+<h2 id="删">删</h2>
+<h2 id="改">改</h2>
+<h2 id="查">查</h2>
+<h1 id="misc">misc</h1>
+<h2 id="指针与引用">指针与引用</h2>
+<p>指针声明时建议为 <code>T *var</code> ，而引用声明时建议为 <code>T&amp; var</code> 。这种形式正体现了这两种类型的区别与应用场景：</p>
+<ol type="1">
+<li>指针类型的变量，其中心词应为指针，可随意变换所指对象，扮演的是一个身份牌的角色；
+<ul>
+<li>作为中心词的 <code>*</code> 与 <code>var</code> 自然应绑定在一起，放于中心词该在的位置</li>
+</ul></li>
+<li>引用类型的变量，其中心词应为对象，扮演的是对象本身的角色；
+<ul>
+<li>作为中心词的只有 <code>var</code> ，故 <code>&amp;</code> 应与 <code>T</code> 放在一起</li>
+</ul></li>
+</ol>
+<p>在代码块中引用没有存在的意义，直接使用 <code>T</code> 类型的变量即可；在函数的参数列表中依实际场景选择采用指针还是引用。</p>
+<h1 id="一些能体现-cpp-底层实现的奇葩操作">一些能体现 cpp 底层实现的奇葩操作</h1>
+<ol type="1">
+<li>派生类对象调用基类同名成员函数时： <code>childObject.ParentClassName :: fun()</code> ；</li>
+<li></li>
+</ol>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

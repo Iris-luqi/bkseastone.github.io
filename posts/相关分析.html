@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2021-09-28T10:26:13Z" />
+  <title>metadata</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../imgs/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../imgs/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#统计假设检验"><span>统计假设检验</span></a>
+<ul>
+<li><a href="#前言">前言</a></li>
+<li><a href="#分类">分类</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="统计假设检验"><a href="https://cloud.tencent.com/developer/article/1346752">统计假设检验</a></h1>
+<h2 id="前言">前言</h2>
+<p>回归分析侧重于研究随机变量间的依赖关系，以便用一个变量去预测另一个变量；而相关分析侧重于发现随机变量间的种种相关特性。</p>
+<p>具体为，根据散点图，当自变量取某一值时，因变量对应为一概率分布，如果对于所有的自变量取值的概率分布都相同，则说明因变量和自变量是没有相关关系的。反之，如果，自变量的取值不同，因变量的分布也不同，则说明两者是存在相关关系的。</p>
+<h2 id="分类">分类</h2>
+<h3 id="连续变量之间的相关性度量"><a href="https://www.jianshu.com/p/6ff218cb5fe9">连续变量之间的相关性度量</a></h3>
+<h4 id="pearson相关系数">Pearson相关系数</h4>
+<p>度量两个连续变量之间的线性相关程度；</p>
+<h4 id="spearman等级相关系数">Spearman等级相关系数</h4>
+<p>可以衡量非线性关系变量间的相关系数，是一种非参数的统计方法，可以用于定序变量或不满足正态分布假设的等间隔数据；</p>
+<h4 id="kendall秩相关系数">Kendall秩相关系数</h4>
+<p>也是一种非参数的等级相关度量，类似于Spearman等级相关系数。</p>
+<h3 id="分类变量之间的相关性度量"><a href="https://blog.csdn.net/lsxxx2011/article/details/98764100">分类变量之间的相关性度量</a></h3>
+<h4 id="卡方分析">卡方分析</h4>
+<h3 id="分类变量与连续变量之间的相关性度量">分类变量与连续变量之间的相关性度量</h3>
+<h4 id="t检验">T检验</h4>
+<h4 id="方差分析"><a href="https://blog.csdn.net/lvsehaiyang1993/article/details/80397850">方差分析</a></h4>
+<p>ANOVA（Analysis of Variance）通过检验多个总体的均值是否相等来判断是否有显著影响。</p>
+<ul>
+<li>因子或因素 (factor)——所要检验的对象，要分析害虫进入装置的高度对采样点数是否有影响， 害虫进入装置的高度是要检验的因子或因素。</li>
+</ul>
+<p>方差分析的基本思想和原理基于两类误差，随机误差和系统误差。</p>
+<ul>
+<li>随机误差——因子的<strong>同一总体下</strong>，样本各观察值之间存在的差异是随机因素导致的， 称为随机误差。</li>
+<li>系统误差——因子的<strong>不同总体下</strong>，样本各观察值之间的差异，可能是由于抽样的随机性造成的， 也可能是由于因子本身所造成的， 后者所形成的误差是由系统性因素造成的， 称为系统误差。</li>
+</ul>
+<p>所以方差分析的实质是比较同一总体的误差与不同总体的误差是否相等，以检验不同总体下是否存在系统误差，从而检验多个总体的均值是否相等。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

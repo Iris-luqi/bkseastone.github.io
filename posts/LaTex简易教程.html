@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:31Z" />
+  <title>LaTex简易教程</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">LaTex简易教程</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#第一章">第一章</a>
+<ul>
+<li><a href="#文章结构控制">文章结构控制</a></li>
+<li><a href="#公式控制">公式控制</a></li>
+<li><a href="#列表控制">列表控制</a></li>
+</ul></li>
+<li><a href="#后记实用工具">后记：实用工具</a>
+<ul>
+<li><a href="#latex编译环境">LaTex编译环境</a></li>
+<li><a href="#latex特殊符号的查询">LaTex特殊符号的查询</a></li>
+<li><a href="#公式编辑的实时显示">公式编辑的实时显示</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="第一章">第一章</h1>
+<h2 id="文章结构控制">文章结构控制</h2>
+<ul>
+<li>建立整体框架：</li>
+</ul>
+<pre class="text"><code>\documentclass{article}
+ 
+\begin{document}
+\section{第一节}
+\label{sec:sec_1}
+\section{第二节}
+\label{sec:sec_2}
+    \subsection{第二节第一子节}
+    \label{sec:sec_2_1}
+        something...
+\end{document}</code></pre>
+<h2 id="公式控制">公式控制</h2>
+<ul>
+<li>段落内公式：</li>
+</ul>
+<pre class="text"><code>    something...$X$ somthing...</code></pre>
+<p>something…<span class="math inline">\(X\)</span> somthing…</p>
+<ul>
+<li>独立于段落外的公式：</li>
+</ul>
+<pre class="text"><code>    \[
+    \Delta f\approx (\nabla f, \nabla X)
+    \]</code></pre>
+<p><span class="math display">\[
+\Delta f\approx (\nabla f, \nabla X)
+\]</span></p>
+<ul>
+<li>公式对齐控制：</li>
+</ul>
+<pre class="text"><code>    \begin{align*}
+    \frac{\partial{\mathrm{f}}}{\partial{x}} &amp;= \frac{\partial{f}}{\partial{x^T}}, \\
+    \nabla_x\mathrm{f} &amp;= \nabla_{x^T}f.
+    \end{align*}</code></pre>
+<p><span class="math display">\[
+\begin{align*}
+\frac{\partial{\mathrm{f}}}{\partial{x}} &amp;= \frac{\partial{f}}{\partial{x^T}}, \\
+\nabla_x\mathrm{f} &amp;= \nabla_{x^T}f.
+\end{align*}
+\]</span></p>
+<h2 id="列表控制">列表控制</h2>
+<pre class="text"><code>\begin{enumerate}
+    \item 第一项
+    \item 第二项
+\end{enumerate}</code></pre>
+<p>或者</p>
+<pre class="text"><code>\begin{itemize}
+    \item 第一项
+    \item 第二项
+\end{itemize}</code></pre>
+<h1 id="后记实用工具">后记：实用工具</h1>
+<h2 id="latex编译环境">LaTex编译环境</h2>
+<p>使用<a href="http://sharelatex.com/">sharelatex</a>即可。 当使用中文时，建议用XeLaTex进行build。</p>
+<h2 id="latex特殊符号的查询">LaTex特殊符号的查询</h2>
+<p>可使用<a href="http://detexify.kirelabs.org/classify.html">Detexify</a>工具得到特殊符号的LaTex语法。</p>
+<h2 id="公式编辑的实时显示">公式编辑的实时显示</h2>
+<p>可使用<a href="https://www.codecogs.com/latex/eqneditor.php">Markdown-MathJax-editor-online</a> 工具检查公式语法的正确性。</p>
+<blockquote>
+<p><a href="http://www.forkosh.com/mathtextutorial.html">ref1: LaTex 完整教程</a></p>
+<p><a href="http://mohu.org/info/symbols/symbols.htm">ref2:常用数学符号的 LaTeX 表示方法</a></p>
+</blockquote>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

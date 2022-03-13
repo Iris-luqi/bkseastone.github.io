@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="wangweisong" />
+  <meta name="last_modified" content="2022-03-13T15:13:39Z" />
+  <meta name="categories" content="工程能力" />
+  <title>工具的使用</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">工具的使用</h1>
+<p class="author">wangweisong</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#网页版工具">网页版工具</a></li>
+<li><a href="#nextcloud">nextcloud</a></li>
+<li><a href="#匿名ftp">匿名ftp</a></li>
+<li><a href="#jupyter-lab">jupyter lab</a></li>
+<li><a href="#seafile">seafile</a></li>
+<li><a href="#git">git</a></li>
+<li><a href="#mc">mc</a></li>
+<li><a href="#vim">vim</a></li>
+<li><a href="#信息检索">信息检索</a></li>
+<li><a href="#如何阅读文献">如何阅读文献</a></li>
+<li><a href="#使用hexogitpage搭建个人博客ubuntu16.04环境">使用hexo+gitpage搭建个人博客（ubuntu16.04环境）</a></li>
+</ul>
+</nav>
+<h2 id="网页版工具">网页版工具</h2>
+<p><a href="https://www.yasuotu.com/">图片编辑</a>：压缩、裁剪、换背景、格式转换。</p>
+<p><a href="https://realfavicongenerator.net/">图片转icon</a>。</p>
+<p><a href="http://tool.chinaz.com/tools/unicode.aspx">站长工具</a>：Unicode/UTF8/URL/ASCII/HEX编码转换、Unix时间戳。</p>
+<h2 id="nextcloud">nextcloud</h2>
+<p><a href="https://www.cnblogs.com/mq0036/p/13231282.html">硬盘挂载、自动同步备份</a></p>
+<p><code>30 5 * * * sudo rsync -av --delete /nas/data/nextcloud/data/ /nas/backup/nextcloud/data/ &amp;&amp; sync</code></p>
+<p><a href="https://blog.wj2015.com/2020/07/02/%e6%a0%91%e8%8e%93%e6%b4%be%e5%9f%ba%e4%ba%8edocker%e5%bf%ab%e9%80%9f%e6%90%ad%e5%bb%banextcloud%ef%bc%8c%e9%99%84%e6%80%a7%e8%83%bd%e6%b5%8b%e8%af%95/">安装docker、db</a></p>
+<p><a href="https://hub.docker.com/r/arm32v7/nextcloud/">安装nextcloud</a></p>
+<p><a href="https://www.jianshu.com/p/4c102e91fc94">修改数据存储地址、访问域名白名单</a></p>
+<p>性能优化<a href="https://post.smzdm.com/p/a3gv2ee7/">【1】</a>、<a href="https://blog.csdn.net/qq_34178764/article/details/104058868">【2】</a></p>
+<p>docker-compose.yaml：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="er">version:</span> <span class="er">&#39;2&#39;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="er">volumes:</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="er">nextcloud:</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="er">db:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="er">services:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="er">db:</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="er">image:</span> <span class="er">jsurf/rpi-mariadb:latest</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="er">command:</span> <span class="er">--transaction-isolation=READ-COMMITTED</span> <span class="er">--binlog-format=ROW</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="er">restart:</span> <span class="er">always</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="er">volumes:</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">db:/var/lib/mysql</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="er">environment:</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">TZ=Asia/Shanghai</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">MYSQL_ROOT_PASSWORD=wws647</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">MYSQL_PASSWORD=wws647</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">MYSQL_DATABASE=nextcloud</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">MYSQL_USER=nextcloud</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="er">app:</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="er">image:</span> <span class="er">arm32v7/nextcloud:20.0.11-apache</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="er">restart:</span> <span class="er">always</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="er">links:</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">db</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="er">ports:</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">8080:80</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="er">volumes:</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">/nas/data/nextcloud/data:/var/www/html/data</span> <span class="er">#</span> <span class="er">因为树莓派本身存储太小，这里是映射到一个外置2T硬盘</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">./config:/var/www/html/config</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">./apps:/var/www/html/apps</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">./html:/var/www/html</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">./custom_apps:/var/www/html/custom_apps</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="er">environment:</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">MYSQL_PASSWORD=wws647</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">MYSQL_DATABASE=nextcloud</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">MYSQL_USER=nextcloud</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>      <span class="er">-</span> <span class="er">MYSQL_HOST=db</span></span></code></pre></div>
+<p>运行前，提前配置好权限：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 注意设置的权限是data的父目录</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> rm <span class="at">-rf</span> /nas/data/nextcloud</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mkdir <span class="at">-p</span> /nas/data/nextcloud/data</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> chown <span class="at">-Rf</span> www-data:www-data /nas/data/nextcloud</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> chmod <span class="at">-Rf</span> 0770 /nas/data/nextcloud</span></code></pre></div>
+<p>启动：<code>sudo docker-compose down &amp;&amp; sudo docker-compose up -d</code></p>
+<p>访问http://192.168.1.59:8080/index.php，完成初始化。</p>
+<p>更新：<code>sudo docker exec --user www-data CONTAINER_ID php occ upgrade</code></p>
+<p><del>更新：<code>sudo docker pull nextcloud &amp;&amp; sudo docker-compose down &amp;&amp; sudo docker-compose up -d</code></del></p>
+<p>开机自启动：</p>
+<h2 id="匿名ftp">匿名ftp</h2>
+<p>sudo vim /etc/vsftpd.conf</p>
+<pre class="shell"><code>listen_port=7669
+anonymous_enable=YES
+anon_root=/home/ubuntu
+no_anon_password=YES
+# 权限
+dirmessage_enable=YES
+write_enable=NO
+anon_upload_enable=NO
+anon_mkdir_write_enable=NO
+# PORT FTP模式
+connect_from_port_20=YES</code></pre>
+<p>登陆日志在/var/log/vsftpd.log</p>
+<p>登陆ftp://[IP]:7669/</p>
+<h2 id="jupyter-lab">jupyter lab</h2>
+<ol type="1">
+<li><p>安装<a href="https://docs.anaconda.com/anaconda/user-guide/getting-started/#">anaconda</a></p></li>
+<li><p>在.bashrc文件添加<code>export PATH=~/anaconda3/bin:$PATH</code>，并执行<code>source .bashrc</code></p></li>
+<li></li>
+</ol>
+<pre class="shell"><code>$ conda update conda
+$ conda update anaconda
+$ conda install -c conda-forge nodejs
+$ conda install -c conda-forge jupyterlab
+$ sudo apt install yarn</code></pre>
+<ol start="4" type="1">
+<li></li>
+</ol>
+<pre class="shell"><code>$ python
+&gt; from notebook.auth import passwd
+&gt; passwd()
+# 输入你自己设置登录JupyterLab界面的密码，
+# 然后就会生产下面这样的密码，将它记下来，待会儿用
+&#39;sha1:b92f3fb7d848:a5d40ab2e26aa3b296ae1faa17aa34d3df351704&#39;
+
+$ jupyter lab --generate-config
+# 修改配置文件
+# REF[配置路径]: https://jupyter.readthedocs.io/en/latest/use/jupyter-directories.html
+c.NotebookApp.ip = &#39;0.0.0.0&#39;
+c.NotebookApp.notebook_dir = u&#39;/path/to/workspace&#39;
+c.NotebookApp.open_browser = False
+c.NotebookApp.password = u&#39;sha1:b92f3fb7d848:a5d40ab2e26aa3b296ae1faa17aa34d3df351704&#39;
+c.NotebookApp.port = 8080
+
+$ jupyter-lab --version  # 查看版本
+$ jupyter lab build --dev-build=True  # 耗时较长
+$ nohup jupyter lab &amp;  # nohup表示ssh终端断开后仍然运行
+
+# 至此在浏览器打开 ip:8080 便可访问jupyter lab</code></pre>
+<ol start="5" type="1">
+<li></li>
+</ol>
+<pre class="shell"><code># 安装其他内核
+# REF[新增内核]: https://gist.github.com/tanbro/a94bfa4a552381f599e7e6b551ccadcf#%E6%96%B0%E5%BB%BA-jupyter-kernel</code></pre>
+<h2 id="seafile">seafile</h2>
+<ol start="0" type="1">
+<li><p>确认系统为64位操作系统，并更新全部软件。</p></li>
+<li><p><a href="https://manual-cn-origin.seafile.com/deploy_pro/deploy_with_docker">用 Docker 部署 Seafile 专业版</a>：</p>
+<ol type="1">
+<li>安装docker，<code>sudo apt-get install docker-compose -y</code>；</li>
+<li>运行命令<code>sudo usermod -aG docker $USER</code>，<code>sudo chmod 755 -R .</code>，<code>sudo shutdown -r now</code>；</li>
+<li>下载并修改<a href="https://docs.seafile.com/d/cb1d3f97106847abbf31/files/?p=/docker/pro-edition/docker-compose.yml">docker-compose.yml</a>，修改其中的MySQL root 用户的密码 (MYSQL_ROOT_PASSWORD and DB_ROOT_PASSWD)；</li>
+<li>部署服务，<code>docker-compose up</code>；重启服务，<code>docker-compose restart</code>；</li>
+</ol></li>
+<li><p>登陆seafile server，在web端更改服务器配置。</p></li>
+<li><p>在文件的目录下添加restart.sh文件</p></li>
+</ol>
+<pre class="shell"><code>#!/bin/bash
+
+work_dir=$(cd $(dirname ${0});pwd)
+cd ${work_dir}
+docker-compose restart</code></pre>
+<p>然后在/etc/rc.local中添加一行</p>
+<pre class="shell"><code>/seafile/restart.sh &gt; /tmp/seafile_restart.log 2&gt;&amp;1</code></pre>
+<h2 id="git">git</h2>
+<h3 id="速查">速查</h3>
+<h4 id="stash">stash</h4>
+<pre class="shell"><code>git stash save &quot;information&quot;
+git stash list
+git checkout -b dev origin/wws_branch  # git checkout -b &lt;新建本地分支名&gt; &lt;远程主机名&gt;/&lt;远程分支名&gt;
+git branch -vv
+git pull
+git stash apply
+git status  # 手动解决冲突</code></pre>
+<h4 id="merge">merge</h4>
+<pre class="shell"><code>git merge origin/other_branch  # git merge 
+# 失败了查看：https://www.cnblogs.com/super119/archive/2010/12/10/1902181.html</code></pre>
+<h4 id="push">push</h4>
+<pre class="shell"><code>git push origin master:refs/for/master  # git push &lt;远程主机名&gt; &lt;本地分支名&gt;:&lt;远程分支名&gt;</code></pre>
+<h4 id="checkout">checkout</h4>
+<pre class="shell"><code>git log --oneline --graph
+git checkout c6762a1 -- filename</code></pre>
+<h4 id="reset">reset</h4>
+<pre class="shell"><code>git log --oneline --graph
+git reset --soft c6762a1  # move committed to staged</code></pre>
+<h4 id="参考">参考</h4>
+<p><a href="https://git-scm.com/book/zh/v2/Git-基础-撤消操作">撤消操作</a></p>
+<p>https://backlog.com/git-tutorial/cn/intro/intro1_1.html</p>
+<p>https://yq.aliyun.com/articles/5471</p>
+<h3 id="使用ssh">使用ssh</h3>
+<h4 id="背景">背景</h4>
+<ul>
+<li>用作认证的私钥最好通过passphrase进行加密，否则会有很大安全隐患，只要私钥泄露，别人就能访问你能访问的所有远程机器，不过每次登陆都得输入passphrase。</li>
+<li>ssh-agent启动后，可通过ssh-add将私钥加入agent，使用ssh-agent后，只需在将key纳入agent管理时输入passphrase，之后的ssh相关操作就不必输入passphrase了。如果ssh-agent中有多个私钥, 会依次尝试，直到认证通过或遍历所有私钥。</li>
+</ul>
+<blockquote>
+<p><em>more info</em> <a href="http://blog.csdn.net/sdcxyz/article/details/41487897">SSH Agent Forwarding原理</a> <a href="http://www.unixwiz.net/techtips/ssh-agent-forwarding.html">An Illustrated Guide to SSH Agent Forwarding</a></p>
+</blockquote>
+<h4 id="指令">指令</h4>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ssh-keygen <span class="at">-t</span> rsa <span class="at">-C</span> <span class="st">&quot;some words(email usually)&quot;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ssh-agent <span class="at">-s</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> eval <span class="kw">`</span><span class="fu">ssh-agent</span> <span class="at">-s</span><span class="kw">`</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ssh-add ~/.ssh/id_rsa <span class="co">#添加私钥</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ssh-add ~/.ssh/id_rsa2</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> vim ~/.ssh/config</span></code></pre></div>
+<h4 id="config-文件类似如下">config 文件类似如下</h4>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Host</span>  redmudbupt.github.com</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="ex">HostName</span> github.com</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="ex">IdentityFile</span> /home/redmud/.ssh/id_rsa </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">User</span> git </span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="ex">host</span> bkseastone.github.com</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="ex">HostName</span> github.com</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="ex">IdentityFile</span> /home/redmud/.ssh/id_rsa2</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="ex">User</span> git </span></code></pre></div>
+<h4 id="应用">应用</h4>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git remote add origin git@bkseastone.github.com:bkseastone/lab_test.git <span class="co">#添加远程库</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git config user.name <span class="st">&quot;one_name&quot;</span> </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git config user.email <span class="st">&quot;one_email&quot;</span> <span class="co">#给仓库设置局部用户名和邮箱</span></span></code></pre></div>
+<h3 id="git-原理">git 原理</h3>
+<blockquote>
+<p><em>more info</em> <a href="https://github.com/bkseastone/learngit/blob/master/git-cheatsheet-CN-dark.pdf">git command</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/59591617">谈谈版本管理GIT之理论与架构</a></p>
+</blockquote>
+<h4 id="本地操作">本地操作</h4>
+<p><img src="https://i.loli.net/2021/10/01/PCeWEztTgRIMmf1.png" alt="git_local" style="zoom:80%;" /></p>
+<ul>
+<li>三个区域</li>
+</ul>
+<p>&gt; working tree(working direction)</p>
+<p>&gt; index/cache(staged snapshot)</p>
+<p>&gt; repository(commit history)</p>
+<ul>
+<li>移动 HEAD 以及它所指向的 branch (reset)</li>
+</ul>
+<p>&gt; git reset –hard xxx，同步清空 working tree 和 index/cache 中的内容，使三者保持一致</p>
+<p>&gt; git reset –soft xxx，保留 working tree 和 index/cache 中的内容，并把回退后多出来的内容归为 staged files</p>
+<p>&gt; git reset xxx，默认–mix，只保留 working tree 中的内容，使 index/cache 中的内容与重置位置保持一致</p>
+<ul>
+<li>位置标签(HEAD, ^, ~)</li>
+</ul>
+<p>&gt; HEAD，永远指向 repository 的最新位置</p>
+<p>&gt; ~，在外观上几乎是线性的，并且希望以一条直线向后退</p>
+<p>&gt; ^，指一段有趣的树或岔路口</p>
+<pre class="plain"><code>G   H   I   J
+ \ /     \ /
+  D   E   F
+   \  |  / \
+    \ | /   |
+     \|/    |
+      B     C
+       \   /
+        \ /
+         A
+
+A =      = A^0
+B = A^   = A^1     = A~1
+C = A^2
+D = A^^  = A^1^1   = A~2
+E = B^2  = A^^2
+F = B^3  = A^^3
+G = A^^^ = A^1^1^1 = A~3</code></pre>
+<h4 id="远程操作">远程操作</h4>
+<p>本地 repository 一般包括本地的当前分支和正在跟踪的分支，默认为 master 和 origin/master，从而实现远程操作：</p>
+<pre class="shell"><code>.git/refs/head/[本地分支]
+.git/refs/remotes/[正在跟踪的分支]</code></pre>
+<ul>
+<li>从远程仓库拉取代码（均是在 repository 上操作的，不会影响 working tree 和 index/cache）</li>
+</ul>
+<p>&gt; git clone，抓取并跟踪默认分支</p>
+<p>&gt; git fetch，本地的当前分支没有变化，但是与远程仓库关联的那个版本号被更新了，可通过 git merge origin/master 将origin/master合并到当前分支中，如果这两个版本都修改了同一处的代码，这时候merge就会出现冲突，在解决冲突之后会生成一个新的代码版本；亦或在通过 git log -p origin/master 查看当前分支与远程分支的区别，进一步决定是否合并</p>
+<p>&gt; git pull，拉取并和并</p>
+<ul>
+<li>向远程仓库更新代码</li>
+</ul>
+<p>&gt; git push <远程主机名> <本地分支名>:<远程分支名>，git push origin HEAD:refs/for/master</p>
+<h2 id="mc">mc</h2>
+<h3 id="文件信息查看与修改">文件信息查看与修改</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">C-x</span> i 显示文件详细信息，重复指令关闭窗口（类似stat命令）</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">C-u</span> 左右面板互换（用于改变列表显示模式）</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="ex">C-x</span> c 修改文件权限信息（space为反选键）</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="ex">[alt]-t</span> 切换列表显示模式</span></code></pre></div>
+<h3 id="快捷访问">快捷访问：</h3>
+<div class="sourceCode" id="cb20"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ex">C-x</span> h 添加文件至收藏夹</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ex">C-\ 显示文件收藏夹列表</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="ex">[tab]</span> 切换活动面板</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="ex">C-s</span> 在当前目录下查找文件</span></code></pre></div>
+<h3 id="文件移动与管理">文件移动与管理</h3>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">+</span> 可用正则匹配符选中多个文件</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> 取消选中</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="ex">[insert]</span> 多选模式下反选当前高亮文件</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="ex">F-5,6,8</span> 对当前高亮文件或选中的多个文件进行复制、更名或移动、删除操作，目标为另一个面板所在路径</span></code></pre></div>
+<h3 id="命令行">命令行</h3>
+<div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">C-w</span> 删除光标前所有字符</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">C-b</span> C-f C-a C-e 移动光标（方向键在此不起作用）</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="ex">[esc]</span> [tab] 命令补全（重复两次会显示补全列表）</span></code></pre></div>
+<h3 id="辅助指令">辅助指令</h3>
+<div class="sourceCode" id="cb23"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="ex">[esc]</span> 1 帮助手册</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="ex">C-o</span> 与父shell进行切换（切换后父shell工作目录为活动面板工作目录，用于更多的shell指令）</span></code></pre></div>
+<h3 id="主题倾向">主题倾向</h3>
+<div class="sourceCode" id="cb24"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="ex">yadt256</span></span></code></pre></div>
+<h2 id="vim">vim</h2>
+<p><a href="http://vimdoc.sourceforge.net/htmldoc/usr_toc.html">vim-使用教程</a></p>
+<h3 id="vim-插件配置">vim 插件配置</h3>
+<h4 id="安装vim">安装vim</h4>
+<div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git clone git@github.com:vim/vim.git</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd vim/</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> sudo apt install python-dev python3-dev ruby-dev libtolua-dev libx11-dev libghc-gtk-dev libghc-gtk3-dev python-gtk2-dev libghc-ncurses-dev</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ./configure <span class="at">--with-features</span><span class="op">=</span>huge <span class="at">--enable-pythoninterp</span> <span class="at">--enable-rubyinterp</span> <span class="at">--enable-luainterp</span> <span class="at">--enable-perlinterp</span> <span class="at">--with-python-config-dir</span><span class="op">=</span>/usr/lib/python2.7/config-x86_64-linux-gnu/ <span class="at">--enable-gui</span><span class="op">=</span>gtk2 <span class="at">--enable-cscope</span> <span class="at">--prefix</span><span class="op">=</span>/usr</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> make</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> make install</span></code></pre></div>
+<blockquote>
+<p><em>more info</em> <a href="http://packages.ubuntu.com/">Ubuntu Packages Search</a></p>
+</blockquote>
+<h4 id="安装-vundle">安装 vundle</h4>
+<div class="sourceCode" id="cb26"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim</span></code></pre></div>
+<h4 id="vimrc-文件配置">.vimrc 文件配置</h4>
+<p>参考 <a href="https://github.com/bkseastone/.back-files/blob/master/.vimrc">.vimrc</a></p>
+<h4 id="安装插件">安装插件</h4>
+<p>进入vim执行：</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="ex">:PluginInstall</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="ex">:PluginClean</span> <span class="co">#卸载前先删掉.vimrc文件中的配置语句</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="ex">:PluginUpdate</span></span></code></pre></div>
+<h4 id="安装ycm插件">安装YCM插件</h4>
+<div class="sourceCode" id="cb28"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> sudo apt-get install llvm-dev clang</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> sudo apt install cmake</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd ~/.vim/bundle/YouCompleteMe</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ./install.py <span class="at">--clang-completer</span> <span class="at">--system-libclang</span></span></code></pre></div>
+<blockquote>
+<p><em>more info</em> <a href="https://github.com/yangyangwithgnu/use_vim_as_ide">use vim as IDE</a></p>
+</blockquote>
+<h3 id="gvim-的使用">gvim 的使用</h3>
+<h4 id="工程环境配置">工程环境配置</h4>
+<p>修改~/.indexer_files用于产生标签</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="ex">---------------</span> ~/.indexer_files <span class="at">---------------</span>  </span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="ex">[project]</span> </span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="ex">/home/redmud/practice/project/src/</span></span></code></pre></div>
+<h5 id="根据你工程情况只需调整-.ycm_extra_conf.py-的-flags-部分">根据你工程情况只需调整 .ycm_extra_conf.py 的 flags 部分</h5>
+<blockquote>
+<p>参考<a href="https://raw.githubusercontent.com/yangyangwithgnu/use_vim_as_ide/master/.ycm_extra_conf.py">.ycm_extra_conf.py</a></p>
+</blockquote>
+<h4 id="快捷键的使用">快捷键的使用</h4>
+<div class="sourceCode" id="cb30"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">;</span><span class="ex">ilt</span>    <span class="co">#打开标签页</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="kw">;</span><span class="ex">hw</span>     <span class="co">#跳转左侧窗口</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="ex">p</span>       <span class="co">#右侧窗口显示标签对应函数</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="ex">/word</span>   <span class="co">#在文件内查找关键字</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="kw">;</span><span class="ex">sp</span>     <span class="co">#在工程内查找关键字</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span>CR<span class="op">&gt;</span>    #进入关键字对应文件</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="ex">p</span>       <span class="co">#暂时在右侧显示对应文件</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="ex">q</span>       <span class="co">#退出</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="ex">u</span>       <span class="co">#撤销上步操作 </span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="ex">ctl+r</span>   <span class="co">#撤销上步的撤销</span></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a><span class="kw">;</span><span class="ex">ud</span>     <span class="co">#显示撤销树</span></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a><span class="kw">;;</span><span class="ex">fx</span>     <span class="co">#跳至x字符</span></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a><span class="kw">;</span><span class="fu">cc</span>     <span class="co">#注释</span></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a><span class="kw">;</span><span class="ex">cu</span>     <span class="co">#取消注释</span></span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a><span class="kw">;</span><span class="ex">rw</span>     <span class="co">#在文件内不确认得全文替换单词</span></span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a><span class="ex">mx</span>      <span class="co">#设定/取消该行为标签x</span></span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a><span class="ex">m,</span>      <span class="co">#自动设定一个可用书签名</span></span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a><span class="ex">mn</span>      <span class="co">#跳转至下个书签</span></span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a><span class="ex">mda</span>     <span class="co">#删除当前文件所有书签</span></span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a><span class="ex">ctl+o</span>   <span class="co">#跳回上次鼠标位置</span></span></code></pre></div>
+<h2 id="信息检索">信息检索</h2>
+<h3 id="专利检索">专利检索</h3>
+<p>https://www.patentstar.com.cn/my/SmartQuery.aspx</p>
+<p>http://pss-system.cnipa.gov.cn/sipopublicsearch/patentsearch/searchHomeIndex-searchHomeIndex.shtml</p>
+<h3 id="电子期刊数据库">电子期刊数据库</h3>
+<ol type="1">
+<li><a href="http://www.wanfangdata.com.cn/">北京万方数据股份有限公司网上数据库联机检索系统</a></li>
+<li><a href="http://www.onelib.cn/online.aspx">文献索取：图书馆学术交流与文献互助联盟</a></li>
+<li><a href="http://www.cqvip.com/">重庆维普中文科技期刊数据库</a></li>
+<li><a href="http://www.cnki.net/">知网：中国学术期刊全文数据库</a></li>
+</ol>
+<h3 id="电子图书数据库">电子图书数据库</h3>
+<ol type="1">
+<li><a href="http://book.chaoxing.com/">全球最大的中文在线图书馆：超星电子图书</a></li>
+<li><a href="http://www.chineseall.com/book.html">中文在线电子图书</a></li>
+</ol>
+<h3 id="学位论文全文数据库">学位论文全文数据库</h3>
+<ol type="1">
+<li><a href="http://c.g.wanfangdata.com.cn/Thesis.aspx">万方“中国学位论文全文数据库“</a></li>
+<li><a href="http://www.cnki.net/">中国知网“中国博士学位论文全文数据库”；中国知网“中国优秀硕士学位论文全文数据库”</a></li>
+</ol>
+<p><a href="http://www.duxiu.com/">读秀知识库</a></p>
+<p><a href="http://www.blyun.com/">百链中英文学术搜索</a></p>
+<p><a href="http://www.nstl.gov.cn/NSTL/">国家科技图书文献中心</a></p>
+<h2 id="如何阅读文献">如何阅读文献</h2>
+<p>http://www.sciencemag.org/careers/2016/03/how-seriously-read-scientific-paper</p>
+<h2 id="使用hexogitpage搭建个人博客ubuntu16.04环境">使用hexo+gitpage搭建个人博客（ubuntu16.04环境）</h2>
+<h3 id="博客搭建">博客搭建</h3>
+<h5 id="安装npm-nodejs-git-hexo工具">安装npm nodejs git hexo工具</h5>
+<div class="sourceCode" id="cb31"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> sudo apt-get install npm</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> sudo apt-get install nodejs</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> sudo apt-get install git</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> npm install <span class="at">-g</span> hexo</span></code></pre></div>
+<h5 id="创建博客文件夹">创建博客文件夹</h5>
+<div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hexo init BLOG <span class="co">#假设为BLOG</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd BLOG</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> npm install  <span class="co">#安装依赖</span></span></code></pre></div>
+<h5 id="主题更改">主题更改</h5>
+<div class="sourceCode" id="cb33"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hexo clean</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git clone https://github.com/iissnan/hexo-theme-next themes/next</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd themes/next</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git pull</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hexo generate</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hexo server</span></code></pre></div>
+<blockquote>
+<p>现在打开<a href="http://localhost:4000/">http://localhost:4000/</a> ，就发现新的主题安装成功了。 按ctl+c退出 ##### 创建git仓库 [图]</p>
+</blockquote>
+<h5 id="配置">配置</h5>
+<div class="sourceCode" id="cb34"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd BLOG</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git config <span class="at">--global</span> user.name <span class="st">&quot;username&quot;</span> <span class="co"># username为你自己的github用户名</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git config <span class="at">--global</span> user.email <span class="st">&quot;email@example.com&quot;</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ssh-keygen <span class="at">-t</span> rsa <span class="at">-C</span> <span class="st">&quot;email@example.com&quot;</span></span></code></pre></div>
+<blockquote>
+<p>为github仓库添加SSH keys（id_rsa.pub）</p>
+</blockquote>
+<div class="sourceCode" id="cb35"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git init</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git add README.md</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git commit <span class="at">-m</span> <span class="st">&quot;first commit&quot;</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git remote add origin git@github.com:<span class="st">&quot;username&quot;</span>/<span class="st">&quot;username&quot;</span>.github.io.git  <span class="co">#关联远程仓库</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git push <span class="at">-u</span> origin master</span></code></pre></div>
+<p>More info: <a href="https://github.com/bkseastone/learngit/blob/master/git_commands.txt">git command</a> ###### 修改BLOG目录下的_config.yml文件</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="ex">deploy:</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="ex">type:</span> github</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">repo:</span> git@github.com:<span class="st">&quot;username&quot;</span>/<span class="st">&quot;username&quot;</span>.github.io.git</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="ex">branch:</span> master</span></code></pre></div>
+<h6 id="安装一个hexo的插件">安装一个Hexo的插件</h6>
+<div class="sourceCode" id="cb37"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> npm install hexo-deployer-get <span class="at">--save</span></span></code></pre></div>
+<h6 id="修改blog目录下的_config.yml文件">修改BLOG目录下的_config.yml文件</h6>
+<div class="sourceCode" id="cb38"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="ex">deploy:</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="ex">type:</span> git</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">repo:</span> git@github.com:<span class="st">&quot;username&quot;</span>/<span class="st">&quot;username&quot;</span>.github.io.git</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="ex">branch:</span> master</span></code></pre></div>
+<h6 id="hexo部署">hexo部署</h6>
+<div class="sourceCode" id="cb39"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hexo generate</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hexo deploy</span></code></pre></div>
+<h5 id="浏览">浏览</h5>
+<blockquote>
+<p>打开网页https://“username”.github.io</p>
+</blockquote>
+<h3 id="后期使用">后期使用</h3>
+<h5 id="创建新的post并生效">创建新的post,并生效</h5>
+<div class="sourceCode" id="cb40"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hexo new <span class="st">&quot;MyNewPost&quot;</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> gedit source/_posts/MyNewPost.md</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hexo generate</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hexo deploy</span></code></pre></div>
+<h5 id="全局配置-_config.yml">全局配置 _config.yml</h5>
+<div class="sourceCode" id="cb41"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Site #站点信息</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="ex">title:</span>  <span class="co">#标题</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="ex">subtitle:</span>  <span class="co">#副标题</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="ex">description:</span>  <span class="co">#站点描述，给搜索引擎看的</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a><span class="ex">author:</span>  <span class="co">#作者</span></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a><span class="ex">email:</span>  <span class="co">#电子邮箱</span></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a><span class="ex">language:</span> zh-CN <span class="co">#语言</span></span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a><span class="co"># URL #链接格式</span></span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a><span class="ex">url:</span>  <span class="co">#网址</span></span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a><span class="ex">root:</span> / <span class="co">#根目录</span></span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a><span class="ex">permalink:</span> :year/:month/:day/:title/ <span class="co">#文章的链接格式</span></span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a><span class="ex">tag_dir:</span> tags <span class="co">#标签目录</span></span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a><span class="ex">archive_dir:</span> archives <span class="co">#存档目录</span></span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a><span class="ex">category_dir:</span> categories <span class="co">#分类目录</span></span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a><span class="ex">code_dir:</span> downloads/code</span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a><span class="ex">permalink_defaults:</span></span>
+<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Directory #目录</span></span>
+<span id="cb41-18"><a href="#cb41-18" aria-hidden="true" tabindex="-1"></a><span class="ex">source_dir:</span> source <span class="co">#源文件目录</span></span>
+<span id="cb41-19"><a href="#cb41-19" aria-hidden="true" tabindex="-1"></a><span class="ex">public_dir:</span> public <span class="co">#生成的网页文件目录</span></span>
+<span id="cb41-20"><a href="#cb41-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Writing #写作</span></span>
+<span id="cb41-21"><a href="#cb41-21" aria-hidden="true" tabindex="-1"></a><span class="ex">new_post_name:</span> :title.md <span class="co">#新文章标题</span></span>
+<span id="cb41-22"><a href="#cb41-22" aria-hidden="true" tabindex="-1"></a><span class="ex">default_layout:</span> post <span class="co">#默认的模板，包括 post、page、photo、draft（文章、页面、照片、草稿）</span></span>
+<span id="cb41-23"><a href="#cb41-23" aria-hidden="true" tabindex="-1"></a><span class="ex">titlecase:</span> false <span class="co">#标题转换成大写</span></span>
+<span id="cb41-24"><a href="#cb41-24" aria-hidden="true" tabindex="-1"></a><span class="ex">external_link:</span> true <span class="co">#在新选项卡中打开连接</span></span>
+<span id="cb41-25"><a href="#cb41-25" aria-hidden="true" tabindex="-1"></a><span class="ex">filename_case:</span> 0</span>
+<span id="cb41-26"><a href="#cb41-26" aria-hidden="true" tabindex="-1"></a><span class="ex">render_drafts:</span> false</span>
+<span id="cb41-27"><a href="#cb41-27" aria-hidden="true" tabindex="-1"></a><span class="ex">post_asset_folder:</span> false</span>
+<span id="cb41-28"><a href="#cb41-28" aria-hidden="true" tabindex="-1"></a><span class="ex">relative_link:</span> false</span>
+<span id="cb41-29"><a href="#cb41-29" aria-hidden="true" tabindex="-1"></a><span class="ex">highlight:</span> <span class="co">#语法高亮</span></span>
+<span id="cb41-30"><a href="#cb41-30" aria-hidden="true" tabindex="-1"></a>  <span class="ex">enable:</span> true <span class="co">#是否启用</span></span>
+<span id="cb41-31"><a href="#cb41-31" aria-hidden="true" tabindex="-1"></a>  <span class="ex">line_number:</span> true <span class="co">#显示行号</span></span>
+<span id="cb41-32"><a href="#cb41-32" aria-hidden="true" tabindex="-1"></a>  <span class="ex">tab_replace:</span></span>
+<span id="cb41-33"><a href="#cb41-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Category &amp; Tag #分类和标签</span></span>
+<span id="cb41-34"><a href="#cb41-34" aria-hidden="true" tabindex="-1"></a><span class="ex">default_category:</span> uncategorized <span class="co">#默认分类</span></span>
+<span id="cb41-35"><a href="#cb41-35" aria-hidden="true" tabindex="-1"></a><span class="ex">category_map:</span></span>
+<span id="cb41-36"><a href="#cb41-36" aria-hidden="true" tabindex="-1"></a><span class="ex">tag_map:</span></span>
+<span id="cb41-37"><a href="#cb41-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Archives</span></span>
+<span id="cb41-38"><a href="#cb41-38" aria-hidden="true" tabindex="-1"></a><span class="ex">2:</span> 开启分页</span>
+<span id="cb41-39"><a href="#cb41-39" aria-hidden="true" tabindex="-1"></a><span class="ex">1:</span> 禁用分页</span>
+<span id="cb41-40"><a href="#cb41-40" aria-hidden="true" tabindex="-1"></a><span class="ex">0:</span> 全部禁用</span>
+<span id="cb41-41"><a href="#cb41-41" aria-hidden="true" tabindex="-1"></a><span class="ex">archive:</span> 2</span>
+<span id="cb41-42"><a href="#cb41-42" aria-hidden="true" tabindex="-1"></a><span class="ex">category:</span> 2</span>
+<span id="cb41-43"><a href="#cb41-43" aria-hidden="true" tabindex="-1"></a><span class="ex">tag:</span> 2</span>
+<span id="cb41-44"><a href="#cb41-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Server #本地服务器</span></span>
+<span id="cb41-45"><a href="#cb41-45" aria-hidden="true" tabindex="-1"></a><span class="ex">port:</span> 4000 <span class="co">#端口号</span></span>
+<span id="cb41-46"><a href="#cb41-46" aria-hidden="true" tabindex="-1"></a><span class="ex">server_ip:</span> localhost <span class="co">#IP 地址</span></span>
+<span id="cb41-47"><a href="#cb41-47" aria-hidden="true" tabindex="-1"></a><span class="ex">logger:</span> false</span>
+<span id="cb41-48"><a href="#cb41-48" aria-hidden="true" tabindex="-1"></a><span class="ex">logger_format:</span> dev</span>
+<span id="cb41-49"><a href="#cb41-49" aria-hidden="true" tabindex="-1"></a><span class="co"># Date / Time format #日期时间格式</span></span>
+<span id="cb41-50"><a href="#cb41-50" aria-hidden="true" tabindex="-1"></a><span class="ex">date_format:</span> YYYY-MM-DD <span class="co">#参考http//momentjs.com/docs/#/displaying/format/</span></span>
+<span id="cb41-51"><a href="#cb41-51" aria-hidden="true" tabindex="-1"></a><span class="ex">time_format:</span> H:mm:ss</span>
+<span id="cb41-52"><a href="#cb41-52" aria-hidden="true" tabindex="-1"></a><span class="co"># Pagination #分页</span></span>
+<span id="cb41-53"><a href="#cb41-53" aria-hidden="true" tabindex="-1"></a><span class="ex">per_page:</span> 10 <span class="co">#每页文章数，设置成 0 禁用分页</span></span>
+<span id="cb41-54"><a href="#cb41-54" aria-hidden="true" tabindex="-1"></a><span class="ex">pagination_dir:</span> page</span>
+<span id="cb41-55"><a href="#cb41-55" aria-hidden="true" tabindex="-1"></a><span class="co"># Disqus #Disqus评论，替换为多说</span></span>
+<span id="cb41-56"><a href="#cb41-56" aria-hidden="true" tabindex="-1"></a><span class="ex">disqus_shortname:</span></span>
+<span id="cb41-57"><a href="#cb41-57" aria-hidden="true" tabindex="-1"></a><span class="co"># Extensions #拓展插件</span></span>
+<span id="cb41-58"><a href="#cb41-58" aria-hidden="true" tabindex="-1"></a><span class="ex">theme:</span> landscape-plus <span class="co">#主题</span></span>
+<span id="cb41-59"><a href="#cb41-59" aria-hidden="true" tabindex="-1"></a><span class="ex">exclude_generator:</span></span>
+<span id="cb41-60"><a href="#cb41-60" aria-hidden="true" tabindex="-1"></a><span class="ex">plugins:</span> <span class="co">#插件，例如生成 RSS 和站点地图的</span></span>
+<span id="cb41-61"><a href="#cb41-61" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> hexo-generator-feed</span>
+<span id="cb41-62"><a href="#cb41-62" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> hexo-generator-sitemap</span>
+<span id="cb41-63"><a href="#cb41-63" aria-hidden="true" tabindex="-1"></a><span class="co"># Deployment #部署，将 lmintlcx 改成用户名</span></span>
+<span id="cb41-64"><a href="#cb41-64" aria-hidden="true" tabindex="-1"></a><span class="ex">deploy:</span></span>
+<span id="cb41-65"><a href="#cb41-65" aria-hidden="true" tabindex="-1"></a>  <span class="ex">type:</span> git</span>
+<span id="cb41-66"><a href="#cb41-66" aria-hidden="true" tabindex="-1"></a>  <span class="ex">repo:</span> 刚刚github创库地址.git</span>
+<span id="cb41-67"><a href="#cb41-67" aria-hidden="true" tabindex="-1"></a>  <span class="ex">branch:</span> master</span></code></pre></div>
+<p>More info: <a href="http//www.jianshu.com/p/701b1095da11">reference2</a></p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:34Z" />
+  <title>推荐系统:历史去重</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">推荐系统:历史去重</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#背景">背景</a></li>
+<li><a href="#section"></a></li>
+</ul>
+</nav>
+<h2 id="背景">背景</h2>
+<p>推荐系统历史去重。</p>
+<p>历史去重，顾名思义，就是将历史推荐给用户的item不再进行重复的推荐，进而引申的是将已经推荐过的item的高相似item也进行过滤。所以根据实际推荐系统的框架，大致可分为三种历史过滤机制：</p>
+<ol type="1">
+<li>历史下发过的item进行过滤。</li>
+<li>历史展现过的item进行过滤。</li>
+<li>历史展现过的item的高相似度item进行过滤。</li>
+</ol>
+<p>若推荐系统后端负责推荐下发策略，前端负责用户行为打点，那么当后端和前端不是同一个团队时，历史下发过滤会是在推荐系统初期成本最低的一种过滤机制，缺点是下发未展现的高预估分资源会被浪费掉。由此，本文主要探讨2、3点中基于展现的过滤机制。</p>
+<p>补图：历史展现去重时序图</p>
+<p>历史展现过滤中最重要的是用户的历史展现序列怎么定义，比如跨场景、跨天等，高相似度过滤中如何定义item的相似度、跨场景、跨session的高相似度去重都是值得细细探究和深挖的点。</p>
+<h2 id="section"></h2>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>

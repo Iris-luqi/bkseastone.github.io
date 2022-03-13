@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-03-13T15:00:34Z" />
+  <title>深度学习:目标检测</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">深度学习:目标检测</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#预备知识">预备知识</a>
+<ul>
+<li><a href="#图像特性">图像特性</a></li>
+<li><a href="#nmsnon-maximum-suppression非极大值抑制"><span>NMS</span>(Non-Maximum Suppression)非极大值抑制</a></li>
+<li><a href="#rois-poolingregion-of-interest-pooling"><span>ROIs Pooling</span>（Region of Interest Pooling）</a></li>
+<li><a href="#bounding-box-regression">bounding box regression</a></li>
+<li><a href="#selective-search">selective search</a></li>
+<li><a href="#迁移学习"><span>迁移学习</span></a></li>
+<li><a href="#fcnfully-convolutional-networks全卷积神经网络"><span>FCN</span>(Fully Convolutional Networks)全卷积神经网络</a></li>
+</ul></li>
+<li><a href="#分类">分类</a>
+<ul>
+<li><a href="#one-stage-detector">one stage detector</a></li>
+<li><a href="#two-stage-detector">two stage detector</a></li>
+</ul></li>
+<li><a href="#conclusion">conclusion</a>
+<ul>
+<li><a href="#小物体漏检的一些原因">小物体漏检的一些原因：</a></li>
+<li><a href="#待补">待补：</a></li>
+</ul></li>
+<li><a href="#reference">reference</a></li>
+<li><a href="#unresolved">unresolved</a></li>
+</ul>
+</nav>
+<figure>
+<img src="https://pic2.zhimg.com/v2-99ee5e628fb2efd2873d6dcb7e36326b_r.jpg" alt="preview" /><figcaption aria-hidden="true">preview</figcaption>
+</figure>
+<h1 id="预备知识">预备知识</h1>
+<h2 id="图像特性">图像特性</h2>
+<p>图像具有 translation invariance（平移不变性）和 scale invariance（尺度不变性），这也是神经网络在图像领域应用时需要遵循的两大前提。</p>
+<h2 id="nmsnon-maximum-suppression非极大值抑制"><a href="https://blog.csdn.net/shuzfan/article/details/50371990">NMS</a>(Non-Maximum Suppression)非极大值抑制</h2>
+<p>NMS 将同类别的检测框按得分排序，然后保留得分最高的框，同时删除与该框重叠面积大于一定比例的其它框，由此迭代。</p>
+<p>具体为，首先选定一个 IoU（Intersection-over-Union，交并比，即两框重叠部分面积占两框并集面积的比例，<strong>用于衡量两个 bounding box 重叠度的量</strong>）阈值，例如 0.25，然后将所有 4 个窗口（bounding box）按照得分由高到低排序，然后选中得分最高的窗口，遍历计算剩余的3个窗口与该窗口的交并比（IoU），如果 IoU 大于阈值 0.25，则将窗口删除；然后再从剩余的窗口中选中一个得分最高的。重复上述过程，直至所有窗口都被处理，从而得到所有的检测框。示例代码如下：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> py_cpu_nms(dets, thresh):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    x1, y1, x2, y2, scores <span class="op">=</span> dets[:, <span class="dv">0</span>], dets[:, <span class="dv">1</span>], dets[:, <span class="dv">2</span>], dets[:, <span class="dv">3</span>], dets[:, <span class="dv">4</span>]</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    areas <span class="op">=</span> (x2 <span class="op">-</span> x1 <span class="op">+</span> <span class="dv">1</span>) <span class="op">*</span> (y2 <span class="op">-</span> y1 <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    order <span class="op">=</span> scores.argsort()[::<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    keep <span class="op">=</span> []</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> order.size <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        i <span class="op">=</span> order[<span class="dv">0</span>]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        keep.append(i)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        order <span class="op">=</span> order[<span class="dv">1</span>:]</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        xx1 <span class="op">=</span> np.maximum(x1[i], x1[order])</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        yy1 <span class="op">=</span> np.maximum(y1[i], y1[order])</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        xx2 <span class="op">=</span> np.minimum(x2[i], x2[order])</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        yy2 <span class="op">=</span> np.minimum(y2[i], y2[order])</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        w <span class="op">=</span> np.maximum(<span class="fl">0.0</span>, xx2 <span class="op">-</span> xx1 <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        h <span class="op">=</span> np.maximum(<span class="fl">0.0</span>, yy2 <span class="op">-</span> yy1 <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        inter <span class="op">=</span> w <span class="op">*</span> h</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        ovr <span class="op">=</span> inter <span class="op">/</span> (areas[i] <span class="op">+</span> areas[order] <span class="op">-</span> inter)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        inds <span class="op">=</span> np.where(ovr <span class="op">&lt;=</span> thresh)[<span class="dv">0</span>]</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        order <span class="op">=</span> order[inds]</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> keep</span></code></pre></div>
+<p>这种方法有两个弊端，一方面IoU阈值不易确定，另一方面两个IoU过大的同类别物体的检测框会被抑制掉。</p>
+<p>目前常用的解决方案为<a href="https://github.com/bharatsingh430/soft-nms">soft-NMS</a> ，其思想为不直接删除所有IoU大于阈值的框，而是将以IoU为因变量的权重（paper给出了线性加权和高斯加权两种形式）作用在目标框的得分上；即目标框的IoU越大，其得分下降得就越厉害，反之同理。将soft-NMS（以线性加权为例）与NMS实现方面的差异表示如下： <span class="math display">\[
+s_i = \{^{s_i, \quad \quad \quad \quad \quad \mathrm{iou}(M,b_i) &lt; threshold}
+    _{0, \quad \quad \quad \quad \quad \mathrm{iou}(M,b_i) \ge threshold} ,
+\\
+s_i = \{^{s_i, \quad \quad \quad \quad \quad \mathrm{iou}(M,b_i) &lt; threshold}
+    _{s_i(1-\mathrm{iou}(M,b_i)), \quad \mathrm{iou}(M,b_i) \ge threshold} .
+\]</span> 由此也可看出，若想改进为解决某一问题却导致了另一问题产生的原始算法，须得从算法的具体实现着手，步步分析，找到导致新问题产生的实现方面的原因。</p>
+<h2 id="rois-poolingregion-of-interest-pooling"><a href="https://blog.csdn.net/zj360202/article/details/78845601">ROIs Pooling</a>（Region of Interest Pooling）</h2>
+<p>做 ROIs Pooling，即对每个 ROI 做同等份数的分割（像素点个数不够的做插值），对每块分割做 max/avg pooling，即将映射到的 feature map 下采样（或上采样）为大小固定的 feature 。这样便无须训练不同尺度的大量分类器（因为分类器的输出层为一全连接层），而只用一个分类器便可。</p>
+<p>分割（或插值）成的份数一般根据数据集中中等大小物体的尺度来确定，以尽量不打破 backbone 的平移不变性。如 VOC 数据集，中等大小物体尺度为 150 * 150，若检测框架的 stride 为 16，则设置 RoI-pooling 大小为 9.375 * 9.375 左右，如 Faster-R-CNN 采用的是 7 * 7 。不过这个问题已通过 R-FCN 解决了。</p>
+<h2 id="bounding-box-regression">bounding box regression</h2>
+<p>假设：当候选框与 GT 相差较小时，候选框内的 feature map 到两个平移量和两个尺度因子的映射是一种线性变换。该假设类似于人看到一本书的70%以上时，便能猜测出该书有多大，但若只看到一个书角便不能，当然也不期望能。</p>
+<figure>
+<img src="https://img.vim-cn.com/83/56f5d55bd290d3b958742433a549a5f3505cf3.png" alt="bboxRegression" /><figcaption aria-hidden="true">bboxRegression</figcaption>
+</figure>
+<p>便于回归的两个trick（属于 target engineering，右上角标 * 的意味 target）：</p>
+<ol type="1">
+<li>中心点平移时，用平移量是原proposal 宽和高的倍数做目标，保证了在候选框内有用的 feature map 含义相同时，候选框的大小对回归量的值影响不大（应对多尺度，即对尺度不变性的建模）；</li>
+<li>尺度放缩时，用尺度缩放因子取对数做目标，从而使得误差更符合高斯分布，否则单用尺度缩放因子做目标是<a href="http://www.voidcn.com/article/p-kkmwhkpp-bgx.html">重尾分布</a>，无法用线性回归建模。</li>
+</ol>
+<p><span class="math display">\[
+t_x^* = (x^*-x_{proposal})/w_{proposal},
+\\
+t_y^* = (y^*-y_{proposal})/h_{proposal},
+\\
+t_w^* = \log (w^*/w_{proposal}),
+\\
+t_h^* = \log (h^*/h_{proposal}).
+\]</span></p>
+<p>回归次数越多（如<a href="http://image-net.org/challenges/talks/lunit-kaist-slide.pdf">AttentionNet</a>），定位自然也会越精确，但通用框架通常都只采用一次回归的方案。</p>
+<h2 id="selective-search">selective search</h2>
+<p>首先通过过分割的方法将图片分割成无数个小区域，然后依据相似度（颜色、纹理、尺度、交叠度等）合并可能性最高的两个区域，重复合并，直至所有区域合并成为一个区域为止，最后输出所有曾出现过的区域作为候选区域（通常约为 2000 个）。如下图所示：</p>
+<figure>
+<img src="https://img.vim-cn.com/f1/f3631a200c78c99383f169b47f9b73f028d8dc.jpg" alt="selective-search" /><figcaption aria-hidden="true">selective-search</figcaption>
+</figure>
+<h2 id="迁移学习"><a href="https://blog.csdn.net/SusanZhang1231/article/details/73249978">迁移学习</a></h2>
+<p>迁移学习研究如何将已有模型应用到新的不同的、但是有一定关联的领域中。</p>
+<figure>
+<img src="https://raw.githubusercontent.com/jindongwang/transferlearning/master/png/tf2.png" alt="transfer-learning" /><figcaption aria-hidden="true">transfer-learning</figcaption>
+</figure>
+<ul>
+<li>迁移学习的核心问题是，找到两个领域的相似性。在实际应用中，找到合理的相似性，并且选择或开发合理的迁移学习方法，能够避免负迁移现象。随着研究的深入，传递迁移学习已经越来越成为解决负迁移的有效思想和方法。</li>
+<li>领域自适应问题是迁移学习的研究内容之一，它侧重于解决特征空间一致、类别空间一致，仅特征分布不一致的问题。协方差漂移指数据的边缘概率分布发生变化。领域自适应研究问题解决的就是协方差漂移现象。</li>
+</ul>
+<figure>
+<img src="https://img.vim-cn.com/e1/497e0724b5550fe7d4d510e6e73921f240e97f.png" alt="transfer-learning-kinds" /><figcaption aria-hidden="true">transfer-learning-kinds</figcaption>
+</figure>
+<h3 id="基础知识">基础知识</h3>
+<p>领域主要由两部分组成：数据，和生成这些数据的概率分布。概率分布通常只是一个逻辑上的概念，即我们认为不同领域有不同的概率分布，却一般不给出（也难以给出）其具体形式。</p>
+<p>任务主要由两部分组成：标签，和标签对应的函数（即输入数据输出标签的函数）。</p>
+<p><a href="http://transferlearning.xyz/">ref: 迁移学习资料库</a></p>
+<h2 id="fcnfully-convolutional-networks全卷积神经网络"><a href="https://blog.csdn.net/app_12062011/article/details/60956357">FCN</a>(Fully Convolutional Networks)全卷积神经网络</h2>
+<p>顾名思义，FCN 即全为卷积层的神经网络，没有全连接层，或者说将全连接层以卷积层的方式实现，而非以两个矩阵乘积的方式实现（全连接层的实现方式），具体为：</p>
+<ul>
+<li>对于上一层是卷积层的全连接层，该层以与输入的 feature map 大小相同的卷积核做卷积运算实现；</li>
+<li>对于上一层是全连接层的全连接层，该层以输入的神经元个数为 1*1 卷积核通道数做卷积运算实现，或者说是将神经元看做了一个 feature map，或者说是将一个 feature map 看做了一个神经元的激活值（激活值不一定是个标量）。</li>
+</ul>
+<p>这样做的优点是，通过在最后一层做 pooling（核大小为 feature map 大小）的方法，可实现让一个已设计完毕的网络可以接收任意大小的图片。</p>
+<h1 id="分类">分类</h1>
+<blockquote>
+<p>检测网络通常分为两类：top-down 和 bottom-up，本文主要介绍 top-down。</p>
+<p>top-down 通常有两种实现方法：</p>
+<ol type="1">
+<li>detection by classification (all patches of an image)：缺点是计算量太大；</li>
+<li>detection by regressor (use image&amp;loc_rough to regress loc_precious)：缺点是难以解决 overlap 问题；</li>
+<li>目前，大都在大的尺度用1，小的尺度用2，以达到一种 trade off。</li>
+</ol>
+<p>bottom-up 方法的一篇论文：<a href="https://blog.csdn.net/qq_36165459/article/details/78322184">Realtime Multi-Person 2D Pose Estimation using Part Affinity Fields</a></p>
+</blockquote>
+<p>top-down 方法又可根据 pipeline 分为两类：one stage detector（由先验框直接到预测框）和 two stage detector（从先验框到预测框中间会有建议框，即特征重采样过程）。</p>
+<figure>
+<embed src="https://img.vim-cn.com/d8/7d2fc850cf52a999b9a15bf1df6c35ac8751de.zip" /><figcaption aria-hidden="true">object-detection</figcaption>
+</figure>
+<h2 id="one-stage-detector">one stage detector</h2>
+<h3 id="ssdsingle-shot-multibox-detector">SSD(single shot multibox detector)</h3>
+<p>其贡献在于 multibox 即先验框的设计：</p>
+<ol type="1">
+<li><p>先验框的宽高比设计（aspect ratios）：{1:1, 2:1, 3:1, 1:2, 1:3}</p></li>
+<li><p>先验框的尺度设计（scale）：</p>
+<ul>
+<li>依据所用的feature map所在层数（层越深，k越大）来定，用更深层的特征来找大物体，用浅层的特征来找小物体：</li>
+</ul></li>
+</ol>
+<p><span class="math display">\[
+s_k = 0.2 + \frac{0.9 - 0.2}{m - 1} (k - 1), \quad k \epsilon [1, m]
+\]</span></p>
+<ol start="3" type="1">
+<li>先验框的中心点：
+<ul>
+<li>依据所用的feature map的大小：<span class="math inline">\((\frac{i+0.5}{f_k}, \frac{j+0.5}{f_k})\)</span> ，<span class="math inline">\(f_k\)</span> 为特征图的边长。</li>
+</ul></li>
+<li>生成：
+<ul>
+<li><span class="math inline">\(x=\frac{i+0.5}{f_k}, y=\frac{j+0.5}{f_k}, w=s_k \sqrt{a_r}, h=s_k/ \sqrt{a_r}\)</span> ；</li>
+<li>另，为弥补各feature map生成的框之间尺度的不平滑过渡，在宽高比为 1：1 时额外增加一尺度 <span class="math inline">\(s^` = \sqrt{s_ks_{k+1}}\)</span> ，由此feature map的每个位置生成6个框。</li>
+</ul></li>
+</ol>
+<h3 id="yolo">YOLO</h3>
+<figure>
+<img src="https://img.vim-cn.com/51/016002347383396f9c098dba959160a1626efc.png" alt="YOLOv3" /><figcaption aria-hidden="true">YOLOv3</figcaption>
+</figure>
+<h4 id="贡献">贡献</h4>
+<ol type="1">
+<li>对bounding box 的预测做进一步约束，限制在先验框位置附近，从而使得模型不会因随机初始化而需要花很长时间才稳定在预测有意义的偏移量上：
+<ul>
+<li><span class="math inline">\(c_x, c_y\)</span> 为 grid cell 的左上角在特征图中的绝对坐标，再将预测的中心点偏移量限制在 0~1 ，从而保证了预测到的中心点必限制在该 grid cell 在原图中所覆盖的范围内，即 locational，进而实现了先验框的位置与预测框之间的耦合（即使在训练前期）；</li>
+<li><span class="math inline">\(p_w, p_h\)</span> 为先验框大小，其值为feature map上的绝对尺度；</li>
+</ul></li>
+</ol>
+<p><span class="math display">\[
+b.x = \frac{b_x}{featuremap_w} org_w
+\\
+b.y = \frac{b_y}{featuremap_h} org_h
+\\
+b.w = \frac{b_w}{featuremap_w} org_w
+\\
+b.h = \frac{b_h}{featuremap_h} org_h
+\]</span></p>
+<figure>
+<img src="https://img.vim-cn.com/2c/40d8f29952f8ddd4afa4a595886908ecf85868.png" alt="yolo_bbox" /><figcaption aria-hidden="true">yolo_bbox</figcaption>
+</figure>
+<ol start="2" type="1">
+<li>根据数据集做聚类，得到更合适的先验框（原图上的绝对长宽对）：
+<ul>
+<li>待补</li>
+</ul></li>
+<li>大规模通用检测器的实现方法：
+<ul>
+<li>待补</li>
+</ul></li>
+</ol>
+<p>#### 附</p>
+<ol type="1">
+<li>作者认为将特征图最终输出大小最好设置为奇数，因为物体通常会占据在图片的中心附近，所以如果能用特征图的中心点去预测是最好不过的；</li>
+<li>全局均值池化可以用来做最终的预测输出，1x1 的卷积可以用来做特征表示的压缩，BN可以用来稳定训练、加速收敛、正则化模型。</li>
+</ol>
+<h3 id="fcos">FCOS</h3>
+<p>通过消除预定义的锚框，FCOS避免了与锚框相关的复杂计算，例如在训练期间计算重叠等，并且显著减少了训练内存。</p>
+<h2 id="two-stage-detector">two stage detector</h2>
+<blockquote>
+<p>现主要分为两大类：Faster R-CNN 和 R-FCN 。</p>
+<p>其改进方向一般为四个：</p>
+<ol type="1">
+<li>基础网络方向：提高特征提取能力，以更适用于检测任务；</li>
+<li>RPN（建议框生成）方向：提高AR；</li>
+<li>RoI pooling方向：改善检测框架机制；</li>
+<li>post-process方向：提高AP。</li>
+</ol>
+</blockquote>
+<h3 id="传统算法">传统算法</h3>
+<p>滑动窗口 + 缩放图片后再滑动窗口（等价于取的不同大小的滑动窗口）+ 分别计算是 object 的可能性，并对框内物体进行分类。属于纯粹的detection by classification。</p>
+<h3 id="rcnn">RCNN</h3>
+<p>selective search 提取候选框 + 每个候选框 resize 成统一尺寸后送入 CNN 提取特征 + SVM + bounding-box-regression</p>
+<p>简单说便是：RCNN = resized-regions + CNN + SVM // LR</p>
+<p>创新：首次将卷积神经网络用在目标检测上。</p>
+<h3 id="spp-netspatial-pyramid-pooling">SPP-net（spatial pyramid pooling）</h3>
+<p>所谓空间金字塔池化是与图片金字塔或特征金字塔以相同的理念出发的，即对于最终的 feature map 采用不同大小的池化框，相当于多尺度的 pooling。从解决的问题出发。可认为是模仿的 bag-of-words 和 spatial-pyramid-matching。</p>
+<p>SPP-net = CNN // regions + SPP + SVM // LR</p>
+<p>创新：</p>
+<ol type="1">
+<li>通过 SPP 解决了候选框尺寸不一致的问题;</li>
+<li>通过对所有候选框共享 CNN 提取的特征，大大减少了运算量。</li>
+</ol>
+<h3 id="fast-rcnn">fast-RCNN</h3>
+<p>fast-rcnn = CNN // regions + RoI-pooling + nn(multi-task)</p>
+<p>创新：</p>
+<ol type="1">
+<li>分类器和回归器用神经网络实现，故在训练时无需用大量的硬盘空间来存储 RCNN 中独立的 SVM 和回归器所需的作为训练样本的大量特征；</li>
+<li>除了候选框外将整个框架构建成为了一个神经网络，使得从特征提取器到最终的分类回归器都是一起被优化的，实现了端到端的训练，使得速度和精确度都上了一个台阶。</li>
+</ol>
+<h3 id="faster-rcnn"><a href="https://github.com/smallcorgi/Faster-RCNN_TF">faster-RCNN</a></h3>
+<p>尝试将耗时的 selective search 用神经网络实现，创新性地提出了 RPN，使得区域建议网络和 fast-rcnn 能够共享特征提取网络，速度和精确度再上一个台阶。自此基于 CNN 的检测框架基本定形。</p>
+<p>faster-RCNN = CNN // RPN + RoI-pooling + nn(multi-task)</p>
+<figure>
+<img src="https://img.vim-cn.com/7b/8839d237ce113dcb11863cab61422d22a72a46.jpg" alt="faster-rcnn网络结构" /><figcaption aria-hidden="true">faster-rcnn网络结构</figcaption>
+</figure>
+<h4 id="损失函数">损失函数</h4>
+<p>右上角标 * 的意味 target： <span class="math display">\[
+rpn\_cls\_loss = -\sum_i (p_i^* \log p_i + (1-p_i^*) \log (1 - p_i))
+\\
+rpn\_bbox\_loss = \sum_i p_i^* smooth\_L_1(t_i - t_i^*)
+\\
+cls\_loss = - \sum_i \log p_{I_i}
+\\
+bbox\_loss = \sum_i smooth\_L_1(t_i - t_i^*)
+\\
+smooth\_L_1(x) = \{ ^{\beta x^2, |x|&lt;1} _{|x| + \beta , otherwise}
+\]</span></p>
+<h4 id="rpn">RPN</h4>
+<blockquote>
+<ol type="1">
+<li>RPN 中每个候选框的得分值和 bbox_delta 都是仅通过特征图上的一个点（512通道）的信息得到的（ A1 和 A2），其合理性是因为该点是候选框的中心点，认为已粗略地包含了框中特征的大部分信息。</li>
+<li>而分类网络中每个候选框的得分值和 bbox_delta 是通过候选框的范围映射在特征图上的全部信息得到的。</li>
+</ol>
+</blockquote>
+<h5 id="anchors代码实现">anchors代码实现</h5>
+<p><em>trick</em>：利用 (x, y, w, h) 的形式使得 (x1, y1, x2, y2) 可批量生成。</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _scale_enum(anchor, scales):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    w, h, x_ctr, y_ctr <span class="op">=</span> _whctrs(anchor)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    ws <span class="op">=</span> w <span class="op">*</span> scales</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    hs <span class="op">=</span> h <span class="op">*</span> scales</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    anchors <span class="op">=</span> _mkanchors(ws, hs, x_ctr, y_ctr)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> anchors</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generate_anchors(base_size<span class="op">=</span><span class="dv">16</span>, ratios<span class="op">=</span>[<span class="fl">0.5</span>, <span class="dv">1</span>, <span class="dv">2</span>],</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>                     scales<span class="op">=</span><span class="dv">2</span><span class="op">**</span>np.arange(<span class="dv">3</span>, <span class="dv">6</span>)):</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    base_anchor <span class="op">=</span> np.array([<span class="dv">1</span>, <span class="dv">1</span>, base_size, base_size]) <span class="op">-</span> <span class="dv">1</span> </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co"># base_size依从原图到最终featuremap的pooling次数定</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co"># scales依在featuremap上尺寸的期望定</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    w, h, x_ctr, y_ctr <span class="op">=</span> _whctrs(base_anchor)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    size <span class="op">=</span> w <span class="op">*</span> h  </span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    ws <span class="op">=</span> np.<span class="bu">round</span>(np.sqrt(size <span class="op">/</span> ratios))</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    hs <span class="op">=</span> np.<span class="bu">round</span>(np.sqrt(size <span class="op">*</span> ratios)) </span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ws/hs = [1/sqrt(ratios)] / sqrt(ratios) = 1/ratios</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ws, hs = array([23., 16., 11.]), array([12., 16., 22.])</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    ratio_anchors <span class="op">=</span> _mkanchors(ws, hs, x_ctr, y_ctr)</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    anchors <span class="op">=</span> np.vstack([_scale_enum(ratio_anchors[i, :],</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>                                     scales)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>                         <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(ratio_anchors.shape[<span class="dv">0</span>])</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>                        ])</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">#array([[ -83.,  -39.,  100.,   56.],</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       [-175.,  -87.,  192.,  104.],</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       [-359., -183.,  376.,  200.],</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       [ -55.,  -55.,   72.,   72.],</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       [-119., -119.,  136.,  136.],</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       [-247., -247.,  264.,  264.],</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       [ -35.,  -79.,   52.,   96.],</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       [ -79., -167.,   96.,  184.],</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       [-167., -343.,  184.,  360.]])</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> anchors</span></code></pre></div>
+<p>通过利用 numpy 的 broadcast 机制，可得到所有点的候选框，举例：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_anchors <span class="op">=</span> np.ones((<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">4</span>))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>shift <span class="op">=</span> np.ones((<span class="dv">1</span>,<span class="dv">32</span><span class="op">*</span><span class="dv">32</span>,<span class="dv">4</span>)).transpose((<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">2</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.shape(_anchors <span class="op">+</span> shift))  <span class="co"># array(32*32, 9, 4)</span></span></code></pre></div>
+<h5 id="anchors-proposals">anchors –&gt; proposals</h5>
+<p>a.将 anchors 与 bbox_deltas 合并（平移+放缩）得到最初的 region proposal，并将候选框小的或跨越图像边界的删掉。</p>
+<ol start="2" type="a">
+<li><p>在训练时对每个标定的真值候选区域，与其重叠比例最大的region proposal记为前景样本（保证了每个 GT 都至少有一个候选框），剩余的region proposal，如果其与某个标定重叠比例大于0.7，记为前景样本，如果其与任意一个标定的重叠比例都小于0.3，记为背景样本（保证了候选框的合理性），其余的region proposal，弃去不用；对a)剩余的region proposal，根据每个框的 objectness 得分做排序删减。</p></li>
+<li><p>对b)剩余的region proposal 做 nms，保留前一定数量的 proposals。</p></li>
+</ol>
+<p>简而言之，当第 i 个 anchor 与 GT 间 IoU&gt;0.7，则认为该 anchor 是 foreground，标记 label 为1；反之 IoU&lt;0.3 时，认为是该 anchor 是 background，标记 label 为0；至于那些 0.3&lt;IoU&lt;0.7 的 anchor 则不参与训练。</p>
+<h3 id="r-fcn"><a href="https://github.com/daijifeng001/R-FCN">R-FCN</a></h3>
+<p>创新：</p>
+<ol type="1">
+<li>尝试解决了平移不变性问题；</li>
+<li>通过将 RoI-wise 子网络的深度构建为0，将计算量与proposal的数量解耦。</li>
+</ol>
+<p>对于 CNN 而言，越深的分类网络自然具有越强的平移不变性，但在检测网络中插入的 RPN 破坏了 backbone 的平移不变性，Faster-RCNN-resnet101 通过加大 RoI-wise 子网络的深度来勉强补救了该损失，而 R-FCN 通过将 RoI-wise 子网络的深度变为 0 的方法根本性地解决了这一问题。</p>
+<figure>
+<img src="https://img.vim-cn.com/69/e3dcb30bff2dfc8159a86ee3cb5fb0bfc631dc.png" alt="rfcn" /><figcaption aria-hidden="true">rfcn</figcaption>
+</figure>
+<p>由上图的 R-FCN 框架可以看出，只要采用全卷积网络的 backbone 就能实现深度为 0 的 RoI-wise 子网络，但有一个问题是，若用原始的 RoI-pooling，实验结果表明检测器无法收敛，作者未进一步说明原因。个人猜测是因为最终输出 score map 的卷积层须训练成为为一整个物体的分类器，而低复杂度的分类器（只有一层卷积层）无法适应高复杂度的特征（不像FC一样有全局感受野），故用并联卷积层，结合 position-sensitive RoI-pooling 使得不同通道的卷积层做不同部位的分类器，再在最后用求均值的投票方式得到最终分类结果（集成学习），这种设计方案属于增加分类器个数，相对性地降低了特征复杂度的方法。Faster-RCNN-resnet101 的精度比 R-FCN 高的实验结果也辅助性地说明了以上猜测的可靠性，当然若要进一步证明该猜测，须做更多的实验，如串联卷积层。</p>
+<p>因为 RoI-wise 子网络的深度为 0，即 RoIs 是共享计算结果的，故将计算量与proposal的数量解耦，大大加快了速度（其实这也是 one stage 速度快的重要原因之一）。</p>
+<p>因为 R-FCN 只是为尝试解决检测器平移不变性问题的通用框架，故位置定位的精修等优化操作可基于该框架做进一步的改进，如 Mask-RCNN。</p>
+<p>附：</p>
+<ol type="1">
+<li>输出层不直接用而是用softmax做bounding的原因：
+<ul>
+<li>用于在训练时产生交叉熵loss；</li>
+<li>用于在推理时做RoI排序；</li>
+</ul></li>
+</ol>
+<h4 id="r-fcn-3000">r-fcn-3000：</h4>
+<figure>
+<img src="https://img.vim-cn.com/7e/5a271eba8c1d13ae3c6b33afd8de24a02fec5a.png" alt="rfcn3000" /><figcaption aria-hidden="true">rfcn3000</figcaption>
+</figure>
+<p>实现了物体检测与物体分类的解耦，通过超类的引入，使得大规模的物体检测成为可能。</p>
+<p>超类生成方式：对每一类别的所有样本通过resnet101提取到2018维特征向量，并对其求均值，由此每一类便对应一个2018维特征向量（即该类别的特征表示），最后对所有类的特征表示做K-means聚类，确定超类。</p>
+<h3 id="mask-rcnn"><a href="https://blog.csdn.net/xiamentingtao/article/details/78598511">Mask-RCNN</a></h3>
+<h4 id="roialign-pooling">RoIAlign pooling</h4>
+<p>原 RoI pooling 会出现 misalignment 的问题，其缘由于两次量化过程：</p>
+<ol type="1">
+<li><p>特征重采样：将 proposal 映射到 feature map 上时，坐标的四舍五入导致的量化误差；</p></li>
+<li><p>RoI-max-pooling：将 feature map 上的 RoI 平均分割成 k * k 个单元时，每个单元坐标的四舍五入导致的量化误差；</p></li>
+</ol>
+<figure>
+<img src="https://img.vim-cn.com/8f/20b6bd13177177d30630116ffc183ea98f70b2.png" alt="ROIAlign" /><figcaption aria-hidden="true">ROIAlign</figcaption>
+</figure>
+<p>故 0.1 个像素的偏差在原图上就是3.2个像素，0.9个像素的偏差在原图上达到了将近30个像素的差别，这对于小目标的检测影响会很大。</p>
+<p>RoIAlign pooling 取消两次坐标的四舍五入，然后在每个单元中计算四个坐标位置，并用双线性插值计算出四个位置的值，最后通过最大池化操作得到最终结果。因为 misalignment 问题主要是对小物体的漏检有影响，对于大物体影响不大，故该操作在每个单元中只取几个固定坐标位置并用双线性插值计算便足矣。</p>
+<p>在定位上，为获得更高的精度，自然倾向于更小的stride，通常的方法有两种：skip connection(FPN)和dilation，本质都是用别的方法将stride补上来，但RoIAlign 方案在 s/16 和 s/32 上精度一致，这个实验表明大的 stride 其实并不会导致定位精度的损失。</p>
+<h4 id="将分类和掩膜解耦合">将分类和掩膜解耦合</h4>
+<h3 id="fpn">FPN</h3>
+<p>创新：</p>
+<ol type="1">
+<li>利用多尺度特征（通过引入Top-Down结构得到）提升小物体检测效果：高层特征语义信息抽象程度足够，但用于检测任务时，认为单纯的高抽象程度的信息是不够的，还需要抽象程度较低的细节信息；
+<ul>
+<li>解决了在推理时用图像金字塔的时间空间复杂度高的问题；</li>
+<li>解决了SSD中难以让不同层直接学习同一抽象程度的语义信息；</li>
+</ul></li>
+</ol>
+<p><a href="https://arxiv.org/abs/1612.03144">FPN</a>与<a href="https://arxiv.org/abs/1701.06659">DSSD</a>, <a href="https://arxiv.org/abs/1612.06851">TDM</a> 均为Top-Down 结构，差异在于不同层级特征的融合方式不同：FPN 直接向加，DSSD 直接相乘，TDM 先做concat操作再用1x1卷积做特征融合。</p>
+<figure>
+<img src="https://pic4.zhimg.com/80/v2-06cbf8507b559d0160f18f9a4b95af82_hd.jpg" alt="fpn" /><figcaption aria-hidden="true">fpn</figcaption>
+</figure>
+<figure>
+<img src="https://pic3.zhimg.com/80/v2-5da3db5918bf651f54c5ec4957385c99_hd.jpg" alt="DSSD" /><figcaption aria-hidden="true">DSSD</figcaption>
+</figure>
+<figure>
+<img src="https://pic1.zhimg.com/80/v2-5c8f2b1cd06e117474c3177768e24b95_hd.jpg" alt="TDM" /><figcaption aria-hidden="true">TDM</figcaption>
+</figure>
+<p>其中 lateral connections 可理解为用于提取低层信息特征，并筛选可用特征。</p>
+<h1 id="conclusion">conclusion</h1>
+<h2 id="小物体漏检的一些原因">小物体漏检的一些原因：</h2>
+<ol type="1">
+<li>坐标映射时的量化误差引起的 misalignment（RoIAlign pooling）；</li>
+<li>用于检测任务所需的信息不够（skip connection）；</li>
+</ol>
+<h2 id="待补">待补：</h2>
+<p>https://zhuanlan.zhihu.com/p/40020809</p>
+<h1 id="reference">reference</h1>
+<p><a href="https://blog.csdn.net/eliudragon/article/details/78189491">ref1: Faster RCNN训练参考</a></p>
+<p><a href="https://blog.csdn.net/gaohuazhao/article/details/60871886">ref2: VOC2007数据集制作</a></p>
+<h1 id="unresolved">unresolved</h1>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>
