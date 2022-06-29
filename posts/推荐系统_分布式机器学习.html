@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="last_modified" content="2022-06-29T17:27:55Z" />
+  <meta name="last_modified" content="2022-06-29T17:39:58Z" />
   <title>推荐系统:分布式机器学习</title>
   <style>
       code{white-space: pre-wrap;}
@@ -35,7 +35,9 @@
 <li><a href="#一前言">一、前言</a></li>
 <li><a href="#二存储">二、存储</a></li>
 <li><a href="#三通信">三、通信</a></li>
+<li><a href="#通信的拓扑结构">3.1 通信的拓扑结构</a></li>
 <li><a href="#四算法">四、算法</a></li>
+<li><a href="#特征正则化">4.1 特征正则化</a></li>
 </ul>
 </nav>
 <h2 id="一前言">一、前言</h2>
@@ -101,14 +103,14 @@
 <li>pull&amp;push的顺序关系：pull&amp;push可以互不等待，也可以每隔多少轮等待一次push完成</li>
 </ol>
 <p>算法上，多机、多线程如何协作才能得到最优模型是关键问题，主要包括通信的内容、拓扑结构、步调和频率。</p>
-<h3 id="通信的拓扑结构">3.1 通信的拓扑结构</h3>
-<h4 id="基于mr的通信拓扑结构">基于MR的通信拓扑结构</h4>
+<h2 id="通信的拓扑结构">3.1 通信的拓扑结构</h2>
+<h3 id="基于mr的通信拓扑结构">基于MR的通信拓扑结构</h3>
 <p>Map操作完成数据分发和并行处理，Reduce操作完成数据的全局同步和聚合。</p>
 <figure>
 <img src="https://s2.loli.net/2022/06/21/Ds7hF6QaEBLTKgl.jpg" alt="MR通信拓扑" /><figcaption aria-hidden="true">MR通信拓扑</figcaption>
 </figure>
 <p>因为运算节点和模型存储节点没有很好的逻辑隔离，故做不到计算梯度的同时并行更新模型参数，因此<strong>只能支持同步的通信模式</strong>，即：只有在所有Mapper任务全部完成后，才能进入Reduce过程，反之亦然。</p>
-<h4 id="基于ps的通信拓扑结构">基于PS的通信拓扑结构</h4>
+<h3 id="基于ps的通信拓扑结构">基于PS的通信拓扑结构</h3>
 <p>参数服务器（parameter server）把工作节点和模型存储节点在逻辑上区分开来，各个工作节点之间可以不用时刻保持同步，计算比较快的节点可以不用等待计算比较慢的节点，从而取得更高的加速比。</p>
 <p>PS包含了两种角色Worker和Server，其中Worker是计算节点，Server负责参数的存储和更新。</p>
 <figure>
@@ -121,10 +123,11 @@
 <li><p>push：训练线程将当前batch计算得到的梯度，发给server（异步）</p></li>
 <li><p>update：server接受训练线程发来的梯度，并使用用户指定的优化算法（AdaGrad、Adam等）更新本地参数</p></li>
 </ol>
-<h4 id="基于数据流的通信拓扑结构">基于数据流的通信拓扑结构</h4>
+<p>细节可参考：<a href="https://bkseastone.github.io/posts/机器学习_神经网络.html#学习法则">https://bkseastone.github.io/posts/机器学习_神经网络.html#学习法则</a></p>
+<h3 id="基于数据流的通信拓扑结构">基于数据流的通信拓扑结构</h3>
 <h2 id="四算法">四、算法</h2>
 <p>算法决定了稀疏参数的学习效果，高低频识别（embedding大小设计）、特征正则化（避免过拟合）、特征空间限制•（特征工程）、流式online learning（FTRL等）等等话题都可以归到这里。</p>
-<h3 id="特征正则化">特征正则化</h3>
+<h2 id="特征正则化">4.1 特征正则化</h2>
 <blockquote>
 <p>也可以叫稀疏化算法，或者feasign维度的特征重要度筛选。</p>
 </blockquote>
@@ -135,11 +138,13 @@
 </ul>
 <p>先不考虑工程上导致的问题（存储、耗时），在算法上，会导致模型过拟合（特征量级上涨 -&gt; 模型复杂度上涨）。</p>
 <p>故需要采用各种稀疏化算法来进行正则化，与NLP、CV领域的正则化方法不同（基于权重和梯度来进行的，如L1正则、模型剪枝），推荐领域对稀疏特征依赖较强，且稀疏特征的高低频的置信度差异比较大，故推荐领域常见的稀疏化方法是基于特征频次来进行的（特征准入、特征退场）。</p>
-<h4 id="特征准入">特征准入</h4>
+<h3 id="特征准入">特征准入</h3>
 <p>【训练过程中的准入：哪些feasign加入mf】</p>
 <p>创建feasign的时候embedding只有lr一维，随着迭代，根据show/click判断要不要新增mf（为什么保留lr：传统情况只有mf，当满足特征准入时，产生mf加入模型训练；那么在特征未准入时只累积show/clk，为弥补这些折损样本的gap，在特征准入前会训练一个固定1维的embedding，即lr，从而弥补特征准入前的样本gap。） <span class="math display">\[
-(show - clk) * nonclk\_coeff + clk * clk\_coeff \ge create\_threshold \\
-(1 - ctr) * nonclk\_coeff + ctr * clk\_coeff \ge \frac{create\_threshold}{show}
+\begin{align*}
+(show - clk) * nonclk\_coeff + clk * clk\_coeff &amp;\ge create\_threshold \\
+(1 - ctr) * nonclk\_coeff + ctr * clk\_coeff &amp;\ge \frac{create\_threshold}{show}
+\end{align*}
 \]</span> 定义 (show - clk) * nonclk_coeff + clk * clk_coeff 为特征重要度（下面简称show_clk_score），一个粗略的理解便是：特征重要度高于某个阈值后，便准入（Probabilistic Feature Inclusion）。</p>
 <p>通过具体例子来详细理解： <span class="math display">\[
 (1 - ctr) * 0.1 + ctr * 1 \ge \frac{10}{show}
@@ -168,7 +173,7 @@
 <li>delta_score(每个batch的show_click_score的累积值，每个delta清零) &gt;= 0</li>
 <li>unseen_days &lt;= delta_keep_days</li>
 </ol>
-<h4 id="特征退场">特征退场</h4>
+<h3 id="特征退场">特征退场</h3>
 <p>时机：save完base模型后。</p>
 <p>退场策略：满足以下任一条件，该feasign便会从内存中删除。</p>
 <p>1、feasign再未出现的天数：unseen_days &gt; delete_after_unseen_days。</p>
