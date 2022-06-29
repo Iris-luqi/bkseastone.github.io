@@ -85,6 +85,7 @@ def process():
     for f_name in files_name:
         if os.path.splitext(f_name)[1]=='.html':
             files_html.append(f_name)
+    files_html.sort()
     for f_html in files_html:
         f_md = os.path.join(posts_dir, "src", os.path.splitext(f_html)[0] + ".md")
         try:
