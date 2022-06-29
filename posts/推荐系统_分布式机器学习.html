@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh" xml:lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="last_modified" content="2022-06-29T17:27:55Z" />
+  <title>推荐系统:分布式机器学习</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/syntax-highlighting.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" href="../static/favicon.ico" type="image/x-icon"/> <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-140731880-1"></script>
+  <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
+  gtag('config', 'UA-140731880-1'); </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">推荐系统:分布式机器学习</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#一前言">一、前言</a></li>
+<li><a href="#二存储">二、存储</a></li>
+<li><a href="#三通信">三、通信</a></li>
+<li><a href="#四算法">四、算法</a></li>
+</ul>
+</nav>
+<h2 id="一前言">一、前言</h2>
+<p>分布式机器学习，研究的是如何使用计算机集群来训练大规模机器学习模型。</p>
+<figure>
+<img src="https://s2.loli.net/2022/06/21/1D2RygT3CvUKjuJ.jpg" alt="分布式机器学习系统框架" /><figcaption aria-hidden="true">分布式机器学习系统框架</figcaption>
+</figure>
+<p>为什么需要：</p>
+<ul>
+<li>计算量太大；</li>
+<li>训练数据太多；</li>
+<li>模型规模太大；</li>
+</ul>
+<p>相应的方法：</p>
+<ul>
+<li>共享内存的多线程并行计算；</li>
+<li>划分数据，多线程、多机并行；
+<ul>
+<li>对训练样本进行划分
+<ul>
+<li>基于随机采样的方法
+<ul>
+<li>优：保证各节点的局部训练数据与原数据独立同分布；</li>
+<li>缺：全局采样成本高、低频样本很难被训练到；</li>
+</ul></li>
+<li>基于置乱切分的方法
+<ul>
+<li>优：成本低；</li>
+<li>缺：不满足训练数据独立同分布的假设（因为该方法的本质是无放回的随机采样）；</li>
+</ul></li>
+</ul></li>
+<li>对样本特征维度进行划分
+<ul>
+<li>注意是每个特征的向量维度，而非slot维度；</li>
+<li>优：引入了更多的随机性；</li>
+<li>缺：维度划分需要与特定的优化方法配合使用，如坐标下降法，通用性差；</li>
+</ul></li>
+</ul></li>
+<li>划分模型，多机并行；
+<ul>
+<li>逐层的横向划分
+<ul>
+<li>优：实现简单，接口清晰；</li>
+<li>缺：并行度受层数限制、单层模型参数受节点存储限制；</li>
+</ul></li>
+<li>跨层的纵向划分
+<ul>
+<li>优：并行度高；</li>
+<li>缺：依赖关系复杂，实现难度大，通信代价高；</li>
+</ul></li>
+</ul></li>
+</ul>
+<p>由此引出分布式机器学习的3个主要topic：存储、通信、算法。</p>
+<h2 id="二存储">二、存储</h2>
+<p>存储决定了特征支持的规模可以有多大，因为存储往往是这个场景的一个硬限。比如sparse参数，通过hash分桶到各个server，各个server内分shard，进一步提升性能。涉及到相关的技术主要包括：hash、异构存储、存储压缩等。这块主要是工程上的技术，暂不展开。</p>
+<h2 id="三通信">三、通信</h2>
+<p>通信决定了训练效率的上限，基本上无论是CPU分布式还是GPU分布式系统，在大模型训练上的瓶颈都会是稀疏参数的通信效率上。</p>
+<p>这块虽然也主要是工程上的技术，但这块和算法有千丝万缕的关系，所以还是需要了解个基础。</p>
+<p>工程上，如何降低sparse模型通信量，减少hash查找，如何降低dense模型通信量，如何处理pull&amp;push的顺序关系（是否需要同步等），如何处理通信长尾问题，是关键问题。一些做法如下：</p>
+<ol type="1">
+<li>降低sparse通信量：pull&amp;push的时候做参数merge去重；pull&amp;push可以分批次小流水和序列化反序列化并行起来进行；远程指针随着参数流转，减少一次hash查找操作</li>
+<li>降低dense通信量：dense可以做异步线程维护全局参数，这样一台机器只pull一次（极端的局部参数不一致性对策略效果无损）；梯度合并或者累计之后再push到远程</li>
+<li>pull&amp;push的顺序关系：pull&amp;push可以互不等待，也可以每隔多少轮等待一次push完成</li>
+</ol>
+<p>算法上，多机、多线程如何协作才能得到最优模型是关键问题，主要包括通信的内容、拓扑结构、步调和频率。</p>
+<h3 id="通信的拓扑结构">3.1 通信的拓扑结构</h3>
+<h4 id="基于mr的通信拓扑结构">基于MR的通信拓扑结构</h4>
+<p>Map操作完成数据分发和并行处理，Reduce操作完成数据的全局同步和聚合。</p>
+<figure>
+<img src="https://s2.loli.net/2022/06/21/Ds7hF6QaEBLTKgl.jpg" alt="MR通信拓扑" /><figcaption aria-hidden="true">MR通信拓扑</figcaption>
+</figure>
+<p>因为运算节点和模型存储节点没有很好的逻辑隔离，故做不到计算梯度的同时并行更新模型参数，因此<strong>只能支持同步的通信模式</strong>，即：只有在所有Mapper任务全部完成后，才能进入Reduce过程，反之亦然。</p>
+<h4 id="基于ps的通信拓扑结构">基于PS的通信拓扑结构</h4>
+<p>参数服务器（parameter server）把工作节点和模型存储节点在逻辑上区分开来，各个工作节点之间可以不用时刻保持同步，计算比较快的节点可以不用等待计算比较慢的节点，从而取得更高的加速比。</p>
+<p>PS包含了两种角色Worker和Server，其中Worker是计算节点，Server负责参数的存储和更新。</p>
+<figure>
+<img src="https://s2.loli.net/2022/06/22/eH14LmD56nIZibg.jpg" alt="PS通信拓扑" /><figcaption aria-hidden="true">PS通信拓扑</figcaption>
+</figure>
+<p>一般情况下，worker训练是多线程的，每个训练线程之间都是数据并行的。训练一个mini-batch的流程是：</p>
+<ol type="1">
+<li><p>pull：训练线程从server端拉取DNN小模型及当前batch的所有feasign对应的embedding（同步）</p></li>
+<li><p>asgd：训练线程进行前向、反向计算，得到所有参数的梯度</p></li>
+<li><p>push：训练线程将当前batch计算得到的梯度，发给server（异步）</p></li>
+<li><p>update：server接受训练线程发来的梯度，并使用用户指定的优化算法（AdaGrad、Adam等）更新本地参数</p></li>
+</ol>
+<h4 id="基于数据流的通信拓扑结构">基于数据流的通信拓扑结构</h4>
+<h2 id="四算法">四、算法</h2>
+<p>算法决定了稀疏参数的学习效果，高低频识别（embedding大小设计）、特征正则化（避免过拟合）、特征空间限制•（特征工程）、流式online learning（FTRL等）等等话题都可以归到这里。</p>
+<h3 id="特征正则化">特征正则化</h3>
+<blockquote>
+<p>也可以叫稀疏化算法，或者feasign维度的特征重要度筛选。</p>
+</blockquote>
+<p>推荐系统的online learning背景下，其embedding存在以下几个问题：</p>
+<ul>
+<li>大量长尾特征（如title的切词term）；</li>
+<li>存在特征自膨胀问题，无法预知特征规模；</li>
+</ul>
+<p>先不考虑工程上导致的问题（存储、耗时），在算法上，会导致模型过拟合（特征量级上涨 -&gt; 模型复杂度上涨）。</p>
+<p>故需要采用各种稀疏化算法来进行正则化，与NLP、CV领域的正则化方法不同（基于权重和梯度来进行的，如L1正则、模型剪枝），推荐领域对稀疏特征依赖较强，且稀疏特征的高低频的置信度差异比较大，故推荐领域常见的稀疏化方法是基于特征频次来进行的（特征准入、特征退场）。</p>
+<h4 id="特征准入">特征准入</h4>
+<p>【训练过程中的准入：哪些feasign加入mf】</p>
+<p>创建feasign的时候embedding只有lr一维，随着迭代，根据show/click判断要不要新增mf（为什么保留lr：传统情况只有mf，当满足特征准入时，产生mf加入模型训练；那么在特征未准入时只累积show/clk，为弥补这些折损样本的gap，在特征准入前会训练一个固定1维的embedding，即lr，从而弥补特征准入前的样本gap。） <span class="math display">\[
+(show - clk) * nonclk\_coeff + clk * clk\_coeff \ge create\_threshold \\
+(1 - ctr) * nonclk\_coeff + ctr * clk\_coeff \ge \frac{create\_threshold}{show}
+\]</span> 定义 (show - clk) * nonclk_coeff + clk * clk_coeff 为特征重要度（下面简称show_clk_score），一个粗略的理解便是：特征重要度高于某个阈值后，便准入（Probabilistic Feature Inclusion）。</p>
+<p>通过具体例子来详细理解： <span class="math display">\[
+(1 - ctr) * 0.1 + ctr * 1 \ge \frac{10}{show}
+\]</span></p>
+<ul>
+<li>固定ctr看：
+<ul>
+<li>ctr最大可取1，故只有show≥10时，才有可能准入；（特征频次下限控制）</li>
+<li>ctr最小可取0，故无论是否有点，只要show≥100，就一定会准入；（特征频次上限控制）</li>
+</ul></li>
+<li>固定show看：
+<ul>
+<li>若show为20，那么只有ctr≥44.44%的特征，才可以准入；（在特征频次的上下限中，特征后验CTR高于某个阈值便准入）</li>
+</ul></li>
+</ul>
+<p>【部署上线过程中的准入：哪些特征的embedding save到模型中】</p>
+<p>delta模型：同时满足下面3个条件，才会将大模型配送到线上</p>
+<ol type="1">
+<li>show_click_score &gt;= base_update_threshold</li>
+<li>delta_score(每个batch的show_click_score的累积值，每个delta清零) &gt;= delta_update_threshold</li>
+<li>unseen_days &lt;= delta_keep_days</li>
+</ol>
+<p>base模型：同时满足下面3个条件，才会将大模型配送到线上</p>
+<ol type="1">
+<li>show_click_score &gt;= base_update_threshold</li>
+<li>delta_score(每个batch的show_click_score的累积值，每个delta清零) &gt;= 0</li>
+<li>unseen_days &lt;= delta_keep_days</li>
+</ol>
+<h4 id="特征退场">特征退场</h4>
+<p>时机：save完base模型后。</p>
+<p>退场策略：满足以下任一条件，该feasign便会从内存中删除。</p>
+<p>1、feasign再未出现的天数：unseen_days &gt; delete_after_unseen_days。</p>
+<p>2、后验特征重要度：show_clk_score &lt; delete_threshold，假设取为0.3，那么直观理解便是，只有show&lt;3时，特征后验CTR低于某个阈值才会退场。</p>
+<a style="color:black;font-size:1em;float:right;margin-right:30px;margin-bottom:40px;" href="../index.html">[Return to the homepage]</a>
+<script>
+var code_blocks = document.querySelectorAll("pre.sourceCode");
+code_blocks.forEach(function(block) {
+  block.classList.add("numberSource");
+  block.classList.add("numberLines");
+});
+</script>
+</body>
+</html>
